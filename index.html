@@ -12,21 +12,30 @@
     .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .btn:hover { background-color: #218838; }
     
-    /* Layout styling */
     .controls-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
     th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
     th { background-color: #007bff; color: white; }
     tr:nth-child(even) { background-color: #f2f2f2; }
     
-    #dashboard { display: none; }
+    .summary-box { background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 5px; font-weight: bold; }
+    
+    #dashboard, #detailedTable, #summaryTable, .print-btn { display: none; }
+
+    /* PRINTING STYLES: Hides the controls when you press Print */
+    @media print {
+      body { background-color: white; padding: 0; }
+      .container { box-shadow: none; max-width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+      table { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
     
-    <div id="loginScreen" class="login-box">
+    <div id="loginScreen" class="login-box no-print">
       <h2>Portal Login</h2>
       <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
       <input type="password" id="password" placeholder="Password" style="width: 90%;"><br>
@@ -35,21 +44,20 @@
     </div>
 
     <div id="dashboard">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="welcomeText">Dashboard</h2>
+      <div class="no-print" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="welcomeText">Attendance Dashboard</h2>
         <p id="roleText" style="color: #666; font-weight: bold;"></p>
       </div>
-      <hr>
+      <hr class="no-print">
       
-      <div id="adminUpload" style="display: none; margin-bottom: 20px; padding: 15px; border: 2px dashed #ccc; background: #fafafa;">
+      <div id="adminUpload" class="no-print" style="display: none; margin-bottom: 20px; padding: 15px; border: 2px dashed #ccc; background: #fafafa;">
         <h4>Upload Machine Data</h4>
         <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
         <button class="btn" onclick="processExcel()">Process & Save Data</button>
         <span id="uploadMsg" style="margin-left: 10px;"></span>
       </div>
 
-      <h4>Generate Reports</h4>
-      <div class="controls-grid">
+      <div class="no-print controls-grid">
         <div>
           <label>Month:</label><br>
           <input type="month" id="filterMonth">
@@ -68,38 +76,57 @@
 
         <div>
           <label>Employee ID:</label><br>
-          <input type="text" id="filterEmpId" placeholder="Leave blank for all">
+          <input type="text" id="filterEmpId" placeholder="Leave blank for dept summary">
         </div>
 
         <div style="margin-top: 18px;">
-          <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
+          <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Generate Report</button>
+          <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️ Print</button>
         </div>
       </div>
       
-      <div id="reportMsg"></div>
+      <div id="reportMsg" class="no-print"></div>
 
-      <table id="reportTable" style="display: none;">
+      <h3 id="printHeader" style="display: none; text-align: center;">Monthly Attendance Report</h3>
+
+      <table id="summaryTable">
         <thead>
           <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Dept</th>
-            <th>Date</th>
-            <th>In</th>
-            <th>Out</th>
-            <th>Status</th>
-            <th>Hours</th>
+            <th>Week 1 Hrs</th>
+            <th>Week 2 Hrs</th>
+            <th>Week 3 Hrs</th>
+            <th>Week 4 Hrs</th>
+            <th>Week 5+ Hrs</th>
+            <th>Total Month Hrs</th>
           </tr>
         </thead>
-        <tbody id="tableBody">
-          </tbody>
+        <tbody id="summaryTableBody"></tbody>
       </table>
+
+      <div id="detailedTableContainer" style="display: none;">
+        <div id="empSummaryBox" class="summary-box"></div>
+        <table id="detailedTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Status</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody id="detailedTableBody"></tbody>
+        </table>
+      </div>
 
     </div>
   </div>
 
   <script>
-    // PASTE YOUR NEW WEB APP URL HERE
+    // PASTE YOUR WEB APP URL HERE
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
     let currentUserRole = "";
@@ -127,7 +154,6 @@
           if(data.role === "Admin") {
             document.getElementById("adminUpload").style.display = "block";
           } else {
-            // Lock Department filter to their own dept if they are an Officer
             const deptSelect = document.getElementById("filterDept");
             deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
             deptSelect.disabled = true;
@@ -138,74 +164,177 @@
       });
     }
 
-    // [KEEP YOUR processExcel() FUNCTION HERE FROM THE PREVIOUS STEP]
-    // I omitted it here to save space, but paste the processExcel() JS function right here!
-    
-    // NEW: Fetch and Display Report Data
+    // Helper Function to fix the 1899 Excel Time format
+    function formatTime(timeStr) {
+      if (!timeStr || timeStr === "Missing") return "Missing";
+      if (timeStr.toString().includes("1899")) {
+        // Convert to proper readable local time
+        return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      }
+      return timeStr;
+    }
+
     function fetchReport() {
       const msg = document.getElementById("reportMsg");
-      const table = document.getElementById("reportTable");
-      const tbody = document.getElementById("tableBody");
+      const summaryTable = document.getElementById("summaryTable");
+      const detailedTableContainer = document.getElementById("detailedTableContainer");
       
-      const filterData = {
-        month: document.getElementById("filterMonth").value,
-        department: document.getElementById("filterDept").value,
-        empId: document.getElementById("filterEmpId").value
-      };
+      const filterMonth = document.getElementById("filterMonth").value;
+      const filterDept = document.getElementById("filterDept").value;
+      const filterEmpId = document.getElementById("filterEmpId").value.trim();
 
       msg.innerText = "Loading report data...";
       msg.style.color = "blue";
-      table.style.display = "none";
-      tbody.innerHTML = "";
+      
+      summaryTable.style.display = "none";
+      detailedTableContainer.style.display = "none";
+      document.querySelector('.print-btn').style.display = "none";
 
       const payload = {
-        action: "getReport",
-        role: currentUserRole,
-        department: currentUserDept,
-        filters: filterData
+        action: "getReport", role: currentUserRole, department: currentUserDept,
+        filters: { month: filterMonth, department: filterDept, empId: filterEmpId }
       };
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
       .then(data => {
-        if(data.success) {
-          if(data.data.length === 0) {
-            msg.innerText = "No records found for these filters.";
-            msg.style.color = "red";
-          } else {
-            msg.innerText = "Found " + data.data.length + " records.";
-            msg.style.color = "green";
-            table.style.display = "table";
-            
-            // Build the table rows dynamically
-            data.data.forEach(row => {
-              const tr = document.createElement("tr");
-              // Color-coding the status text for easy reading
-              let statusColor = "black";
-              if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
-              if(row.status.includes("Missing")) statusColor = "red";
+        if(data.success && data.data.length > 0) {
+          msg.innerText = "";
+          document.querySelector('.print-btn').style.display = "inline-block";
+          document.getElementById("printHeader").style.display = "block";
+          document.getElementById("printHeader").innerText = `Monthly Attendance Report - ${filterMonth || "All Time"}`;
 
-              tr.innerHTML = `
-                <td>${row.empId}</td>
-                <td>${row.name}</td>
-                <td>${row.department}</td>
-                <td>${new Date(row.date).toLocaleDateString()}</td>
-                <td>${row.checkIn}</td>
-                <td>${row.checkOut}</td>
-                <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
-                <td>${row.hours}</td>
-              `;
-              tbody.appendChild(tr);
-            });
+          // If no Employee ID is entered -> SUMMARY REPORT
+          if (filterEmpId === "") {
+            buildSummaryReport(data.data);
+            summaryTable.style.display = "table";
+          } 
+          // If Employee ID is entered -> DETAILED REPORT
+          else {
+            buildDetailedReport(data.data);
+            detailedTableContainer.style.display = "block";
+            document.getElementById("detailedTable").style.display = "table";
           }
         } else {
-          msg.innerText = data.message;
-          msg.style.color = "red";
+          msg.innerText = "No records found."; msg.style.color = "red";
         }
       }).catch(err => {
-        msg.innerText = "Error pulling data.";
-        msg.style.color = "red";
+        msg.innerText = "Error pulling data."; msg.style.color = "red";
       });
+    }
+
+    // Creates the Department Summary View (Weekly & Monthly Totals)
+    function buildSummaryReport(records) {
+      const tbody = document.getElementById("summaryTableBody");
+      tbody.innerHTML = "";
+      
+      let summary = {};
+
+      records.forEach(row => {
+        let day = new Date(row.date).getDate();
+        let weekNum = Math.ceil(day / 7); // Groups into Week 1 (1-7), Week 2 (8-14), etc.
+        if (weekNum > 5) weekNum = 5; 
+        
+        let hrs = parseFloat(row.hours) || 0;
+
+        if (!summary[row.empId]) {
+          summary[row.empId] = { name: row.name, dept: row.department, w1:0, w2:0, w3:0, w4:0, w5:0, total:0 };
+        }
+        
+        summary[row.empId]["w" + weekNum] += hrs;
+        summary[row.empId].total += hrs;
+      });
+
+      for (let empId in summary) {
+        let s = summary[empId];
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${empId}</td>
+          <td>${s.name}</td>
+          <td>${s.dept}</td>
+          <td>${s.w1.toFixed(2)}</td>
+          <td>${s.w2.toFixed(2)}</td>
+          <td>${s.w3.toFixed(2)}</td>
+          <td>${s.w4.toFixed(2)}</td>
+          <td>${s.w5.toFixed(2)}</td>
+          <td style="font-weight: bold; background-color: #d4edda;">${s.total.toFixed(2)} Hrs</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Creates the Individual Detailed View
+    function buildDetailedReport(records) {
+      const tbody = document.getElementById("detailedTableBody");
+      const summaryBox = document.getElementById("empSummaryBox");
+      tbody.innerHTML = "";
+      
+      let w1=0, w2=0, w3=0, w4=0, w5=0, total=0;
+      let empName = records[0].name;
+
+      records.forEach(row => {
+        // Build daily row
+        const tr = document.createElement("tr");
+        let statusColor = "black";
+        if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
+        if(row.status.includes("Missing")) statusColor = "red";
+
+        tr.innerHTML = `
+          <td>${new Date(row.date).toLocaleDateString()}</td>
+          <td>${formatTime(row.checkIn)}</td>
+          <td>${formatTime(row.checkOut)}</td>
+          <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
+          <td>${row.hours}</td>
+        `;
+        tbody.appendChild(tr);
+
+        // Calculate totals for the summary box
+        let day = new Date(row.date).getDate();
+        let weekNum = Math.ceil(day / 7);
+        if (weekNum > 5) weekNum = 5; 
+        let hrs = parseFloat(row.hours) || 0;
+
+        if(weekNum === 1) w1 += hrs;
+        if(weekNum === 2) w2 += hrs;
+        if(weekNum === 3) w3 += hrs;
+        if(weekNum === 4) w4 += hrs;
+        if(weekNum === 5) w5 += hrs;
+        total += hrs;
+      });
+
+      summaryBox.innerHTML = `
+        Employee: ${empName} | 
+        W1: ${w1.toFixed(2)}h | 
+        W2: ${w2.toFixed(2)}h | 
+        W3: ${w3.toFixed(2)}h | 
+        W4: ${w4.toFixed(2)}h | 
+        W5: ${w5.toFixed(2)}h | 
+        <span style="color: green;">Total Month: ${total.toFixed(2)} Hours</span>
+      `;
+    }
+
+    // --- PASTE YOUR processExcel() FUNCTION HERE FROM THE PREVIOUS STEPS ---
+    function processExcel() {
+      const fileInput = document.getElementById('excelFile');
+      const msg = document.getElementById('uploadMsg');
+      if (!fileInput.files.length) { msg.innerText = "Please select a file first."; msg.style.color = "red"; return; }
+      msg.innerText = "Reading file..."; msg.style.color = "blue";
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+        msg.innerText = "Sending " + jsonRecords.length + " records to database...";
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: jsonRecords }) })
+        .then(response => response.json())
+        .then(result => {
+          if(result.success) { msg.innerText = "Success! " + result.message; msg.style.color = "green"; } 
+          else { msg.innerText = "Error: " + result.message; msg.style.color = "red"; }
+        }).catch(err => { msg.innerText = "Failed to send data."; msg.style.color = "red"; });
+      };
+      reader.readAsArrayBuffer(file);
     }
   </script>
 </body>
