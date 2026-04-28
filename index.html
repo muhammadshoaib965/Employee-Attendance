@@ -5,118 +5,208 @@
   <title>University Attendance Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 400px; text-align: center; }
-    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-    button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-    button:hover { background-color: #218838; }
-    .upload-section { margin-top: 20px; padding: 20px; border: 2px dashed #ccc; background: #fafafa; }
-    #message, #uploadMsg { margin-top: 10px; font-size: 14px; }
-    #dashboard { display: none; width: 100%; }
+    body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+    .login-box { max-width: 300px; margin: auto; text-align: center; padding-top: 50px; }
+    input, select { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background-color: #218838; }
+    
+    /* Layout styling */
+    .controls-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #007bff; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    
+    #dashboard { display: none; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div id="loginScreen">
+    
+    <div id="loginScreen" class="login-box">
       <h2>Portal Login</h2>
-      <input type="text" id="username" placeholder="Username">
-      <input type="password" id="password" placeholder="Password">
-      <button onclick="login()">Sign In</button>
-      <div id="message"></div>
+      <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
+      <input type="password" id="password" placeholder="Password" style="width: 90%;"><br>
+      <button class="btn" onclick="login()" style="width: 95%; margin-top: 10px;">Sign In</button>
+      <div id="message" style="margin-top: 10px;"></div>
     </div>
 
     <div id="dashboard">
-      <h2 id="welcomeText"></h2>
-      <p id="roleText" style="color: #666;"></p>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="welcomeText">Dashboard</h2>
+        <p id="roleText" style="color: #666; font-weight: bold;"></p>
+      </div>
       <hr>
       
-      <div class="upload-section" id="adminUpload" style="display: none;">
-        <h3>Upload Machine Data</h3>
-        <p style="font-size: 12px; color: #777;">Select the Excel file from the biometric machine.</p>
+      <div id="adminUpload" style="display: none; margin-bottom: 20px; padding: 15px; border: 2px dashed #ccc; background: #fafafa;">
+        <h4>Upload Machine Data</h4>
         <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
-        <button onclick="processExcel()">Process & Save Data</button>
-        <div id="uploadMsg"></div>
+        <button class="btn" onclick="processExcel()">Process & Save Data</button>
+        <span id="uploadMsg" style="margin-left: 10px;"></span>
       </div>
+
+      <h4>Generate Reports</h4>
+      <div class="controls-grid">
+        <div>
+          <label>Month:</label><br>
+          <input type="month" id="filterMonth">
+        </div>
+        
+        <div id="deptFilterDiv">
+          <label>Department:</label><br>
+          <select id="filterDept">
+            <option value="All">All Departments</option>
+            <option value="IT">IT</option>
+            <option value="HR">HR</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Administration">Administration</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Employee ID:</label><br>
+          <input type="text" id="filterEmpId" placeholder="Leave blank for all">
+        </div>
+
+        <div style="margin-top: 18px;">
+          <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
+        </div>
+      </div>
+      
+      <div id="reportMsg"></div>
+
+      <table id="reportTable" style="display: none;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Dept</th>
+            <th>Date</th>
+            <th>In</th>
+            <th>Out</th>
+            <th>Status</th>
+            <th>Hours</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          </tbody>
+      </table>
+
     </div>
   </div>
 
   <script>
-    // PASTE YOUR UPDATED WEB APP URL HERE
+    // PASTE YOUR NEW WEB APP URL HERE
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
+
+    let currentUserRole = "";
+    let currentUserDept = "";
 
     function login() {
       const user = document.getElementById("username").value;
       const pass = document.getElementById("password").value;
       const msg = document.getElementById("message");
 
-      if(!user || !pass) { msg.innerText = "Please fill in all fields."; msg.style.color = "red"; return; }
+      if(!user || !pass) return msg.innerText = "Fill in all fields.";
       msg.innerText = "Authenticating..."; msg.style.color = "blue";
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
         if (data.success) {
+          currentUserRole = data.role;
+          currentUserDept = data.department;
+
           document.getElementById("loginScreen").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
-          document.getElementById("welcomeText").innerText = "Dashboard";
           document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
           
-          // Show upload area only if they are an Admin
           if(data.role === "Admin") {
             document.getElementById("adminUpload").style.display = "block";
+          } else {
+            // Lock Department filter to their own dept if they are an Officer
+            const deptSelect = document.getElementById("filterDept");
+            deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
+            deptSelect.disabled = true;
           }
         } else {
           msg.innerText = data.message; msg.style.color = "red";
         }
-      }).catch(err => { msg.innerText = "Network Error."; msg.style.color = "red"; });
+      });
     }
 
-    // NEW: Reads the Excel file and sends it to Apps Script
-    function processExcel() {
-      const fileInput = document.getElementById('excelFile');
-      const msg = document.getElementById('uploadMsg');
+    // [KEEP YOUR processExcel() FUNCTION HERE FROM THE PREVIOUS STEP]
+    // I omitted it here to save space, but paste the processExcel() JS function right here!
+    
+    // NEW: Fetch and Display Report Data
+    function fetchReport() {
+      const msg = document.getElementById("reportMsg");
+      const table = document.getElementById("reportTable");
+      const tbody = document.getElementById("tableBody");
       
-      if (!fileInput.files.length) {
-        msg.innerText = "Please select a file first."; msg.style.color = "red"; return;
-      }
-
-      msg.innerText = "Reading file..."; msg.style.color = "blue";
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      // When the file is loaded into the browser
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        
-        // Get the first sheet
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        
-        // Convert to JSON
-        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, {raw: false});
-        
-        msg.innerText = "Sending " + jsonRecords.length + " records to database...";
-        
-        // Send to Apps Script
-        fetch(SCRIPT_URL, { 
-          method: "POST", 
-          body: JSON.stringify({ action: "upload", records: jsonRecords }) 
-        })
-        .then(response => response.json())
-        .then(result => {
-          if(result.success) {
-            msg.innerText = "Success! " + result.message; msg.style.color = "green";
-          } else {
-            msg.innerText = "Error: " + result.message; msg.style.color = "red";
-          }
-        }).catch(err => { msg.innerText = "Failed to send data to server."; msg.style.color = "red"; });
+      const filterData = {
+        month: document.getElementById("filterMonth").value,
+        department: document.getElementById("filterDept").value,
+        empId: document.getElementById("filterEmpId").value
       };
 
-      reader.readAsArrayBuffer(file);
+      msg.innerText = "Loading report data...";
+      msg.style.color = "blue";
+      table.style.display = "none";
+      tbody.innerHTML = "";
+
+      const payload = {
+        action: "getReport",
+        role: currentUserRole,
+        department: currentUserDept,
+        filters: filterData
+      };
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          if(data.data.length === 0) {
+            msg.innerText = "No records found for these filters.";
+            msg.style.color = "red";
+          } else {
+            msg.innerText = "Found " + data.data.length + " records.";
+            msg.style.color = "green";
+            table.style.display = "table";
+            
+            // Build the table rows dynamically
+            data.data.forEach(row => {
+              const tr = document.createElement("tr");
+              // Color-coding the status text for easy reading
+              let statusColor = "black";
+              if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
+              if(row.status.includes("Missing")) statusColor = "red";
+
+              tr.innerHTML = `
+                <td>${row.empId}</td>
+                <td>${row.name}</td>
+                <td>${row.department}</td>
+                <td>${new Date(row.date).toLocaleDateString()}</td>
+                <td>${row.checkIn}</td>
+                <td>${row.checkOut}</td>
+                <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
+                <td>${row.hours}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+        } else {
+          msg.innerText = data.message;
+          msg.style.color = "red";
+        }
+      }).catch(err => {
+        msg.innerText = "Error pulling data.";
+        msg.style.color = "red";
+      });
     }
   </script>
-
 </body>
 </html>
