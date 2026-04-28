@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>University Attendance Portal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    button:hover { background-color: #218838; }
+    .upload-section { margin-top: 20px; padding: 20px; border: 2px dashed #ccc; background: #fafafa; }
+    #message, #uploadMsg { margin-top: 10px; font-size: 14px; }
+    #dashboard { display: none; width: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="loginScreen">
+      <h2>Portal Login</h2>
+      <input type="text" id="username" placeholder="Username">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="login()">Sign In</button>
+      <div id="message"></div>
+    </div>
+
+    <div id="dashboard">
+      <h2 id="welcomeText"></h2>
+      <p id="roleText" style="color: #666;"></p>
+      <hr>
+      
+      <div class="upload-section" id="adminUpload" style="display: none;">
+        <h3>Upload Machine Data</h3>
+        <p style="font-size: 12px; color: #777;">Select the Excel file from the biometric machine.</p>
+        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
+        <button onclick="processExcel()">Process & Save Data</button>
+        <div id="uploadMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PASTE YOUR UPDATED WEB APP URL HERE
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
+
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      const msg = document.getElementById("message");
+
+      if(!user || !pass) { msg.innerText = "Please fill in all fields."; msg.style.color = "red"; return; }
+      msg.innerText = "Authenticating..."; msg.style.color = "blue";
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById("loginScreen").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+          document.getElementById("welcomeText").innerText = "Dashboard";
+          document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
+          
+          // Show upload area only if they are an Admin
+          if(data.role === "Admin") {
+            document.getElementById("adminUpload").style.display = "block";
+          }
+        } else {
+          msg.innerText = data.message; msg.style.color = "red";
+        }
+      }).catch(err => { msg.innerText = "Network Error."; msg.style.color = "red"; });
+    }
+
+    // NEW: Reads the Excel file and sends it to Apps Script
+    function processExcel() {
+      const fileInput = document.getElementById('excelFile');
+      const msg = document.getElementById('uploadMsg');
+      
+      if (!fileInput.files.length) {
+        msg.innerText = "Please select a file first."; msg.style.color = "red"; return;
+      }
+
+      msg.innerText = "Reading file..."; msg.style.color = "blue";
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      // When the file is loaded into the browser
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        
+        // Get the first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Convert to JSON
+        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+        
+        msg.innerText = "Sending " + jsonRecords.length + " records to database...";
+        
+        // Send to Apps Script
+        fetch(SCRIPT_URL, { 
+          method: "POST", 
+          body: JSON.stringify({ action: "upload", records: jsonRecords }) 
+        })
+        .then(response => response.json())
+        .then(result => {
+          if(result.success) {
+            msg.innerText = "Success! " + result.message; msg.style.color = "green";
+          } else {
+            msg.innerText = "Error: " + result.message; msg.style.color = "red";
+          }
+        }).catch(err => { msg.innerText = "Failed to send data to server."; msg.style.color = "red"; });
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
+
+</body>
+</html>
