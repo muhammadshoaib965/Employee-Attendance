@@ -11,6 +11,8 @@
     input, select { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .btn:hover { background-color: #218838; }
+    .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; border: none; cursor: pointer; font-size: 12px; }
+    .btn-edit:hover { background-color: #e0a800; }
     
     .controls-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
@@ -22,19 +24,23 @@
     
     #dashboard, #detailedTable, #summaryTable, .print-btn { display: none; }
 
-    /* PRINTING STYLES: Hides the controls when you press Print */
+    /* Modal Styling for Editing */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 8px; text-align: center; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+
     @media print {
       body { background-color: white; padding: 0; }
       .container { box-shadow: none; max-width: 100%; padding: 0; }
       .no-print { display: none !important; }
       table { font-size: 12px; }
+      .action-col { display: none; } /* Hides edit buttons on print */
     }
   </style>
 </head>
 <body>
 
   <div class="container">
-    
     <div id="loginScreen" class="login-box no-print">
       <h2>Portal Login</h2>
       <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
@@ -58,11 +64,7 @@
       </div>
 
       <div class="no-print controls-grid">
-        <div>
-          <label>Month:</label><br>
-          <input type="month" id="filterMonth">
-        </div>
-        
+        <div><label>Month:</label><br><input type="month" id="filterMonth"></div>
         <div id="deptFilterDiv">
           <label>Department:</label><br>
           <select id="filterDept">
@@ -73,12 +75,7 @@
             <option value="Administration">Administration</option>
           </select>
         </div>
-
-        <div>
-          <label>Employee ID:</label><br>
-          <input type="text" id="filterEmpId" placeholder="Leave blank for dept summary">
-        </div>
-
+        <div><label>Employee ID:</label><br><input type="text" id="filterEmpId" placeholder="Leave blank for dept summary"></div>
         <div style="margin-top: 18px;">
           <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Generate Report</button>
           <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️ Print</button>
@@ -86,21 +83,12 @@
       </div>
       
       <div id="reportMsg" class="no-print"></div>
-
       <h3 id="printHeader" style="display: none; text-align: center;">Monthly Attendance Report</h3>
 
       <table id="summaryTable">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Dept</th>
-            <th>Week 1 Hrs</th>
-            <th>Week 2 Hrs</th>
-            <th>Week 3 Hrs</th>
-            <th>Week 4 Hrs</th>
-            <th>Week 5+ Hrs</th>
-            <th>Total Month Hrs</th>
+            <th>ID</th><th>Name</th><th>Dept</th><th>W1 Hrs</th><th>W2 Hrs</th><th>W3 Hrs</th><th>W4 Hrs</th><th>W5 Hrs</th><th>Total Hrs</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody"></tbody>
@@ -111,22 +99,37 @@
         <table id="detailedTable">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Check-In</th>
-              <th>Check-Out</th>
-              <th>Status</th>
-              <th>Hours</th>
+              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th class="action-col no-print">Actions</th>
             </tr>
           </thead>
           <tbody id="detailedTableBody"></tbody>
         </table>
       </div>
+    </div>
+  </div>
 
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3>Edit Attendance</h3>
+      <p id="editDateDisplay" style="font-size: 14px; color: #555;"></p>
+      
+      <input type="hidden" id="editEmpId">
+      <input type="hidden" id="editDate">
+      
+      <label>Check-In (HH:MM 24hr):</label><br>
+      <input type="time" id="editCheckIn" style="width: 80%;"><br><br>
+      
+      <label>Check-Out (HH:MM 24hr):</label><br>
+      <input type="time" id="editCheckOut" style="width: 80%;"><br><br>
+      
+      <button class="btn" onclick="saveEdit()" style="width: 85%;">Save Changes</button>
+      <div id="editMsg" style="margin-top: 10px; font-size: 14px;"></div>
     </div>
   </div>
 
   <script>
-    // PASTE YOUR WEB APP URL HERE
+    // PASTE YOUR UPDATED WEB APP URL HERE
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
     let currentUserRole = "";
@@ -146,7 +149,6 @@
         if (data.success) {
           currentUserRole = data.role;
           currentUserDept = data.department;
-
           document.getElementById("loginScreen").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
           document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
@@ -164,12 +166,11 @@
       });
     }
 
-    // Helper Function to fix the 1899 Excel Time format
+    // Helper for ugly 1899 Excel times
     function formatTime(timeStr) {
       if (!timeStr || timeStr === "Missing") return "Missing";
       if (timeStr.toString().includes("1899")) {
-        // Convert to proper readable local time
-        return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
       }
       return timeStr;
     }
@@ -183,17 +184,11 @@
       const filterDept = document.getElementById("filterDept").value;
       const filterEmpId = document.getElementById("filterEmpId").value.trim();
 
-      msg.innerText = "Loading report data...";
-      msg.style.color = "blue";
-      
-      summaryTable.style.display = "none";
-      detailedTableContainer.style.display = "none";
+      msg.innerText = "Loading report data..."; msg.style.color = "blue";
+      summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
 
-      const payload = {
-        action: "getReport", role: currentUserRole, department: currentUserDept,
-        filters: { month: filterMonth, department: filterDept, empId: filterEmpId }
-      };
+      const payload = { action: "getReport", role: currentUserRole, department: currentUserDept, filters: { month: filterMonth, department: filterDept, empId: filterEmpId } };
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
@@ -204,13 +199,10 @@
           document.getElementById("printHeader").style.display = "block";
           document.getElementById("printHeader").innerText = `Monthly Attendance Report - ${filterMonth || "All Time"}`;
 
-          // If no Employee ID is entered -> SUMMARY REPORT
           if (filterEmpId === "") {
             buildSummaryReport(data.data);
             summaryTable.style.display = "table";
-          } 
-          // If Employee ID is entered -> DETAILED REPORT
-          else {
+          } else {
             buildDetailedReport(data.data);
             detailedTableContainer.style.display = "block";
             document.getElementById("detailedTable").style.display = "table";
@@ -218,102 +210,118 @@
         } else {
           msg.innerText = "No records found."; msg.style.color = "red";
         }
-      }).catch(err => {
-        msg.innerText = "Error pulling data."; msg.style.color = "red";
       });
     }
 
-    // Creates the Department Summary View (Weekly & Monthly Totals)
     function buildSummaryReport(records) {
       const tbody = document.getElementById("summaryTableBody");
       tbody.innerHTML = "";
-      
       let summary = {};
 
       records.forEach(row => {
         let day = new Date(row.date).getDate();
-        let weekNum = Math.ceil(day / 7); // Groups into Week 1 (1-7), Week 2 (8-14), etc.
+        let weekNum = Math.ceil(day / 7);
         if (weekNum > 5) weekNum = 5; 
-        
         let hrs = parseFloat(row.hours) || 0;
 
-        if (!summary[row.empId]) {
-          summary[row.empId] = { name: row.name, dept: row.department, w1:0, w2:0, w3:0, w4:0, w5:0, total:0 };
-        }
-        
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, dept: row.department, w1:0, w2:0, w3:0, w4:0, w5:0, total:0 };
         summary[row.empId]["w" + weekNum] += hrs;
         summary[row.empId].total += hrs;
       });
 
       for (let empId in summary) {
         let s = summary[empId];
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${empId}</td>
-          <td>${s.name}</td>
-          <td>${s.dept}</td>
-          <td>${s.w1.toFixed(2)}</td>
-          <td>${s.w2.toFixed(2)}</td>
-          <td>${s.w3.toFixed(2)}</td>
-          <td>${s.w4.toFixed(2)}</td>
-          <td>${s.w5.toFixed(2)}</td>
-          <td style="font-weight: bold; background-color: #d4edda;">${s.total.toFixed(2)} Hrs</td>
-        `;
-        tbody.appendChild(tr);
+        tbody.innerHTML += `<tr><td>${empId}</td><td>${s.name}</td><td>${s.dept}</td><td>${s.w1.toFixed(2)}</td><td>${s.w2.toFixed(2)}</td><td>${s.w3.toFixed(2)}</td><td>${s.w4.toFixed(2)}</td><td>${s.w5.toFixed(2)}</td><td style="font-weight: bold; background-color: #d4edda;">${s.total.toFixed(2)} Hrs</td></tr>`;
       }
     }
 
-    // Creates the Individual Detailed View
     function buildDetailedReport(records) {
       const tbody = document.getElementById("detailedTableBody");
       const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
-      
       let w1=0, w2=0, w3=0, w4=0, w5=0, total=0;
       let empName = records[0].name;
 
       records.forEach(row => {
-        // Build daily row
-        const tr = document.createElement("tr");
+        let inTime = formatTime(row.checkIn);
+        let outTime = formatTime(row.checkOut);
+        
         let statusColor = "black";
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
         if(row.status.includes("Missing")) statusColor = "red";
 
-        tr.innerHTML = `
+        // Pass exact data to the edit modal
+        let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
+
+        tbody.innerHTML += `<tr>
           <td>${new Date(row.date).toLocaleDateString()}</td>
-          <td>${formatTime(row.checkIn)}</td>
-          <td>${formatTime(row.checkOut)}</td>
+          <td>${inTime}</td>
+          <td>${outTime}</td>
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
           <td>${row.hours}</td>
-        `;
-        tbody.appendChild(tr);
+          <td class="action-col no-print">${editBtnHtml}</td>
+        </tr>`;
 
-        // Calculate totals for the summary box
         let day = new Date(row.date).getDate();
         let weekNum = Math.ceil(day / 7);
         if (weekNum > 5) weekNum = 5; 
         let hrs = parseFloat(row.hours) || 0;
 
-        if(weekNum === 1) w1 += hrs;
-        if(weekNum === 2) w2 += hrs;
-        if(weekNum === 3) w3 += hrs;
-        if(weekNum === 4) w4 += hrs;
-        if(weekNum === 5) w5 += hrs;
+        if(weekNum === 1) w1 += hrs; if(weekNum === 2) w2 += hrs; if(weekNum === 3) w3 += hrs; if(weekNum === 4) w4 += hrs; if(weekNum === 5) w5 += hrs;
         total += hrs;
       });
 
-      summaryBox.innerHTML = `
-        Employee: ${empName} | 
-        W1: ${w1.toFixed(2)}h | 
-        W2: ${w2.toFixed(2)}h | 
-        W3: ${w3.toFixed(2)}h | 
-        W4: ${w4.toFixed(2)}h | 
-        W5: ${w5.toFixed(2)}h | 
-        <span style="color: green;">Total Month: ${total.toFixed(2)} Hours</span>
-      `;
+      summaryBox.innerHTML = `Employee: ${empName} | W1: ${w1.toFixed(2)}h | W2: ${w2.toFixed(2)}h | W3: ${w3.toFixed(2)}h | W4: ${w4.toFixed(2)}h | W5: ${w5.toFixed(2)}h | <span style="color: green;">Total Month: ${total.toFixed(2)} Hours</span>`;
     }
 
-    // --- PASTE YOUR processExcel() FUNCTION HERE FROM THE PREVIOUS STEPS ---
+    // --- MODAL & EDITING LOGIC ---
+    function openModal(empId, date, checkIn, checkOut) {
+      document.getElementById("editEmpId").value = empId;
+      document.getElementById("editDate").value = date;
+      document.getElementById("editDateDisplay").innerText = "Updating for Date: " + new Date(date).toLocaleDateString();
+      
+      // The <input type="time"> requires HH:MM format exactly
+      document.getElementById("editCheckIn").value = (checkIn !== "Missing") ? checkIn.slice(0,5) : "";
+      document.getElementById("editCheckOut").value = (checkOut !== "Missing") ? checkOut.slice(0,5) : "";
+      
+      document.getElementById("editMsg").innerText = "";
+      document.getElementById("editModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+    }
+
+    function saveEdit() {
+      const msg = document.getElementById("editMsg");
+      const inVal = document.getElementById("editCheckIn").value || "Missing";
+      const outVal = document.getElementById("editCheckOut").value || "Missing";
+      
+      msg.innerText = "Saving changes..."; msg.style.color = "blue";
+
+      const payload = {
+        action: "updateRecord",
+        empId: document.getElementById("editEmpId").value,
+        date: document.getElementById("editDate").value,
+        checkIn: inVal,
+        checkOut: outVal
+      };
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          msg.innerText = "Saved successfully! Refreshing..."; msg.style.color = "green";
+          setTimeout(() => {
+            closeModal();
+            fetchReport(); // Auto-refresh the table to show the updated times and newly calculated hours!
+          }, 1000);
+        } else {
+          msg.innerText = "Error: " + data.message; msg.style.color = "red";
+        }
+      });
+    }
+
     function processExcel() {
       const fileInput = document.getElementById('excelFile');
       const msg = document.getElementById('uploadMsg');
@@ -332,7 +340,7 @@
         .then(result => {
           if(result.success) { msg.innerText = "Success! " + result.message; msg.style.color = "green"; } 
           else { msg.innerText = "Error: " + result.message; msg.style.color = "red"; }
-        }).catch(err => { msg.innerText = "Failed to send data."; msg.style.color = "red"; });
+        });
       };
       reader.readAsArrayBuffer(file);
     }
