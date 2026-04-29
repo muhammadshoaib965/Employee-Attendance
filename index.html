@@ -1,4 +1,47 @@
-<div class="container">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>University Attendance Portal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+    .login-box { max-width: 300px; margin: auto; text-align: center; padding-top: 50px; }
+    input, select { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background-color: #218838; }
+    .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; border: none; cursor: pointer; font-size: 12px; }
+    .btn-edit:hover { background-color: #e0a800; }
+    
+    .controls-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #007bff; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    
+    .summary-box { background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 5px; font-weight: bold; }
+    
+    /* CSS logic hiding elements */
+    #detailedTableContainer, #summaryTable, .print-btn { display: none; }
+
+    /* Modal Styling for Editing */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 8px; text-align: center; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+
+    @media print {
+      body { background-color: white; padding: 0; }
+      .container { box-shadow: none; max-width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+      table { font-size: 12px; }
+      .action-col { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
     <div id="loginScreen" class="login-box no-print">
       <h2>Portal Login</h2>
       <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
@@ -7,7 +50,7 @@
       <div id="message" style="margin-top: 10px;"></div>
     </div>
 
-    <div id="dashboard">
+    <div id="dashboard" style="display: none;">
       <div class="no-print" style="display: flex; justify-content: space-between; align-items: center;">
         <h2 id="welcomeText">Attendance Dashboard</h2>
         <p id="roleText" style="color: #666; font-weight: bold;"></p>
@@ -19,7 +62,7 @@
           <h4>1. Upload Machine Data</h4>
           <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width: 100%;">
           <button class="btn" onclick="processExcel()">Process Data</button>
-          <span id="uploadMsg" style="font-size: 12px;"></span>
+          <span id="uploadMsg" style="font-size: 12px; display: block; margin-top: 5px;"></span>
         </div>
         
         <div style="flex: 1; padding-left: 15px;">
@@ -29,16 +72,15 @@
             <option value="Holiday">Mark as Holiday (Off Day)</option>
             <option value="Working Weekend">Mark as Working Weekend</option>
           </select>
-          <input type="text" id="settingDesc" placeholder="e.g., Eid, Labor Day" style="width: 120px;">
+          <input type="text" id="settingDesc" placeholder="e.g., Eid, Labor Day" style="width: 130px;">
           <button class="btn" style="background: #17a2b8;" onclick="saveSetting()">Save Date</button>
           <div id="settingMsg" style="font-size: 12px; margin-top: 5px;"></div>
         </div>
       </div>
 
-      <div class="no-print controls-grid" style="margin-top: 20px;">
+      <div class="no-print controls-grid">
         <div><label>Start Date:</label><br><input type="date" id="filterStart"></div>
         <div><label>End Date:</label><br><input type="date" id="filterEnd"></div>
-        
         <div id="deptFilterDiv">
           <label>Department:</label><br>
           <select id="filterDept">
@@ -50,7 +92,6 @@
           </select>
         </div>
         <div><label>Employee ID:</label><br><input type="text" id="filterEmpId" placeholder="Blank for dept sum"></div>
-        
         <div style="margin-top: 18px;">
           <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
           <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️</button>
@@ -63,13 +104,13 @@
       <table id="summaryTable">
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Dept</th><th>Required Hours</th><th>Hours Spent</th><th>Status</th>
+            <th>ID</th><th>Name</th><th>Dept</th><th>Target Hrs</th><th>Time Spent</th><th>Status</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody"></tbody>
       </table>
 
-      <div id="detailedTableContainer" style="display: none;">
+      <div id="detailedTableContainer">
         <div id="empSummaryBox" class="summary-box"></div>
         <table id="detailedTable">
           <thead>
@@ -83,21 +124,71 @@
     </div>
   </div>
 
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3>Edit Attendance</h3>
+      <p id="editDateDisplay" style="font-size: 14px; color: #555;"></p>
+      <input type="hidden" id="editEmpId">
+      <input type="hidden" id="editDate">
+      <label>Check-In (HH:MM):</label><br>
+      <input type="time" id="editCheckIn" style="width: 80%;"><br><br>
+      <label>Check-Out (HH:MM):</label><br>
+      <input type="time" id="editCheckOut" style="width: 80%;"><br><br>
+      <button class="btn" onclick="saveEdit()" style="width: 85%;">Save Changes</button>
+      <div id="editMsg" style="margin-top: 10px; font-size: 14px;"></div>
+    </div>
+  </div>
+
   <script>
-    // PASTE YOUR SCRIPT_URL
+    // 🚨 PASTE YOUR LATEST WEB APP URL HERE
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
-    // ... Keep your login(), formatTime(), openModal(), closeModal(), saveEdit(), processExcel() ...
+    let currentUserRole = "";
+    let currentUserDept = "";
 
-    // NEW: Save Calendar Setting
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      const msg = document.getElementById("message");
+
+      if(!user || !pass) return msg.innerText = "Fill in all fields.";
+      msg.innerText = "Authenticating..."; msg.style.color = "blue";
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          currentUserRole = data.role;
+          currentUserDept = data.department;
+          
+          document.getElementById("loginScreen").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+          document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
+          
+          if(data.role === "Admin") {
+            document.getElementById("adminControls").style.display = "flex";
+          } else {
+            const deptSelect = document.getElementById("filterDept");
+            deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
+            deptSelect.disabled = true;
+          }
+        } else {
+          msg.innerText = data.message; msg.style.color = "red";
+        }
+      }).catch(err => {
+        msg.innerText = "Connection failed. Did you deploy as a New Version?"; msg.style.color = "red";
+      });
+    }
+
     function saveSetting() {
       const msg = document.getElementById("settingMsg");
       const sDate = document.getElementById("settingDate").value;
       const sType = document.getElementById("settingType").value;
       const sDesc = document.getElementById("settingDesc").value;
 
-      if(!sDate || !sDesc) return msg.innerText = "Fill Date & Description.", msg.style.color="red";
-      msg.innerText = "Saving...", msg.style.color="blue";
+      if(!sDate || !sDesc) { msg.innerText = "Fill Date & Description."; msg.style.color="red"; return; }
+      msg.innerText = "Saving..."; msg.style.color="blue";
 
       fetch(SCRIPT_URL, { 
         method: "POST", 
@@ -108,6 +199,14 @@
       });
     }
 
+    function formatTime(timeStr) {
+      if (!timeStr || timeStr === "Missing") return "Missing";
+      if (timeStr.toString().includes("1899")) {
+        return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+      }
+      return timeStr;
+    }
+
     function fetchReport() {
       const msg = document.getElementById("reportMsg");
       const summaryTable = document.getElementById("summaryTable");
@@ -115,6 +214,7 @@
       
       const filterStart = document.getElementById("filterStart").value;
       const filterEnd = document.getElementById("filterEnd").value;
+      const filterEmpId = document.getElementById("filterEmpId").value.trim();
       
       if(!filterStart || !filterEnd) {
           msg.innerText = "Please select both Start and End dates."; msg.style.color = "red"; return;
@@ -122,13 +222,13 @@
 
       msg.innerText = "Loading data..."; msg.style.color = "blue";
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
+      document.querySelector('.print-btn').style.display = "none";
 
       const payload = { 
         action: "getReport", role: currentUserRole, department: currentUserDept, 
         filters: { 
           startDate: filterStart, endDate: filterEnd, 
-          department: document.getElementById("filterDept").value, 
-          empId: document.getElementById("filterEmpId").value.trim() 
+          department: document.getElementById("filterDept").value, empId: filterEmpId 
         } 
       };
 
@@ -137,16 +237,16 @@
       .then(data => {
         if(data.success && data.data.length > 0) {
           msg.innerText = "";
+          document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
           document.getElementById("printHeader").innerText = `Report: ${filterStart} to ${filterEnd}`;
 
-          if (payload.filters.empId === "") {
+          if (filterEmpId === "") {
             buildSummaryReport(data.data, data.requiredHours);
             summaryTable.style.display = "table";
           } else {
             buildDetailedReport(data.data, data.requiredHours);
             detailedTableContainer.style.display = "block";
-            document.getElementById("detailedTable").style.display = "table";
           }
         } else {
           msg.innerText = data.message || "No records found."; msg.style.color = "red";
@@ -174,7 +274,7 @@
           <td>${empId}</td><td>${s.name}</td><td>${s.dept}</td>
           <td><b>${reqHours}</b></td>
           <td style="color: ${color}; font-weight: bold;">${s.total.toFixed(2)}</td>
-          <td style="color: ${color};">${statusTxt}</td>
+          <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
         </tr>`;
       }
     }
@@ -209,4 +309,61 @@
       let color = total < reqHours ? "red" : "green";
       summaryBox.innerHTML = `Employee: ${empName} | Target Hours: ${reqHours} | <span style="color: ${color};">Time Spent: ${total.toFixed(2)} Hours</span>`;
     }
+
+    function openModal(empId, date, checkIn, checkOut) {
+      document.getElementById("editEmpId").value = empId;
+      document.getElementById("editDate").value = date;
+      document.getElementById("editDateDisplay").innerText = "Updating for Date: " + new Date(date).toLocaleDateString();
+      document.getElementById("editCheckIn").value = (checkIn !== "Missing") ? checkIn.slice(0,5) : "";
+      document.getElementById("editCheckOut").value = (checkOut !== "Missing") ? checkOut.slice(0,5) : "";
+      document.getElementById("editMsg").innerText = "";
+      document.getElementById("editModal").style.display = "block";
+    }
+
+    function closeModal() { document.getElementById("editModal").style.display = "none"; }
+
+    function saveEdit() {
+      const msg = document.getElementById("editMsg");
+      const inVal = document.getElementById("editCheckIn").value || "Missing";
+      const outVal = document.getElementById("editCheckOut").value || "Missing";
+      
+      msg.innerText = "Saving changes..."; msg.style.color = "blue";
+      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal };
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          msg.innerText = "Saved! Refreshing..."; msg.style.color = "green";
+          setTimeout(() => { closeModal(); fetchReport(); }, 1000);
+        } else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+      });
+    }
+
+    function processExcel() {
+      const fileInput = document.getElementById('excelFile');
+      const msg = document.getElementById('uploadMsg');
+      if (!fileInput.files.length) { msg.innerText = "Please select a file first."; msg.style.color = "red"; return; }
+      msg.innerText = "Reading file..."; msg.style.color = "blue";
+      
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+        
+        msg.innerText = "Sending " + jsonRecords.length + " records to database...";
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: jsonRecords }) })
+        .then(response => response.json())
+        .then(result => {
+          if(result.success) { msg.innerText = "Success! " + result.message; msg.style.color = "green"; } 
+          else { msg.innerText = "Error: " + result.message; msg.style.color = "red"; }
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
   </script>
+</body>
+</html>
