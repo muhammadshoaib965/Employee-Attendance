@@ -1,46 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>University Attendance Portal</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; }
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
-    .login-box { max-width: 300px; margin: auto; text-align: center; padding-top: 50px; }
-    input, select { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
-    .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background-color: #218838; }
-    .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; border: none; cursor: pointer; font-size: 12px; }
-    .btn-edit:hover { background-color: #e0a800; }
-    
-    .controls-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-    th { background-color: #007bff; color: white; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
-    
-    .summary-box { background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 5px; font-weight: bold; }
-    
-    #dashboard, #detailedTable, #summaryTable, .print-btn { display: none; }
-
-    /* Modal Styling for Editing */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 8px; text-align: center; }
-    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-
-    @media print {
-      body { background-color: white; padding: 0; }
-      .container { box-shadow: none; max-width: 100%; padding: 0; }
-      .no-print { display: none !important; }
-      table { font-size: 12px; }
-      .action-col { display: none; } /* Hides edit buttons on print */
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
+<div class="container">
     <div id="loginScreen" class="login-box no-print">
       <h2>Portal Login</h2>
       <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
@@ -56,15 +14,31 @@
       </div>
       <hr class="no-print">
       
-      <div id="adminUpload" class="no-print" style="display: none; margin-bottom: 20px; padding: 15px; border: 2px dashed #ccc; background: #fafafa;">
-        <h4>Upload Machine Data</h4>
-        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
-        <button class="btn" onclick="processExcel()">Process & Save Data</button>
-        <span id="uploadMsg" style="margin-left: 10px;"></span>
+      <div id="adminControls" class="no-print controls-grid" style="display: none; background: #e3f2fd; border: 1px solid #90caf9;">
+        <div style="flex: 1; border-right: 1px solid #ccc; padding-right: 15px;">
+          <h4>1. Upload Machine Data</h4>
+          <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width: 100%;">
+          <button class="btn" onclick="processExcel()">Process Data</button>
+          <span id="uploadMsg" style="font-size: 12px;"></span>
+        </div>
+        
+        <div style="flex: 1; padding-left: 15px;">
+          <h4>2. Calendar Overrides</h4>
+          <input type="date" id="settingDate">
+          <select id="settingType">
+            <option value="Holiday">Mark as Holiday (Off Day)</option>
+            <option value="Working Weekend">Mark as Working Weekend</option>
+          </select>
+          <input type="text" id="settingDesc" placeholder="e.g., Eid, Labor Day" style="width: 120px;">
+          <button class="btn" style="background: #17a2b8;" onclick="saveSetting()">Save Date</button>
+          <div id="settingMsg" style="font-size: 12px; margin-top: 5px;"></div>
+        </div>
       </div>
 
-      <div class="no-print controls-grid">
-        <div><label>Month:</label><br><input type="month" id="filterMonth"></div>
+      <div class="no-print controls-grid" style="margin-top: 20px;">
+        <div><label>Start Date:</label><br><input type="date" id="filterStart"></div>
+        <div><label>End Date:</label><br><input type="date" id="filterEnd"></div>
+        
         <div id="deptFilterDiv">
           <label>Department:</label><br>
           <select id="filterDept">
@@ -75,20 +49,21 @@
             <option value="Administration">Administration</option>
           </select>
         </div>
-        <div><label>Employee ID:</label><br><input type="text" id="filterEmpId" placeholder="Leave blank for dept summary"></div>
+        <div><label>Employee ID:</label><br><input type="text" id="filterEmpId" placeholder="Blank for dept sum"></div>
+        
         <div style="margin-top: 18px;">
-          <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Generate Report</button>
-          <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️ Print</button>
+          <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
+          <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️</button>
         </div>
       </div>
       
       <div id="reportMsg" class="no-print"></div>
-      <h3 id="printHeader" style="display: none; text-align: center;">Monthly Attendance Report</h3>
+      <h3 id="printHeader" style="display: none; text-align: center;">Attendance Report</h3>
 
       <table id="summaryTable">
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Dept</th><th>W1 Hrs</th><th>W2 Hrs</th><th>W3 Hrs</th><th>W4 Hrs</th><th>W5 Hrs</th><th>Total Hrs</th>
+            <th>ID</th><th>Name</th><th>Dept</th><th>Required Hours</th><th>Hours Spent</th><th>Status</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody"></tbody>
@@ -99,7 +74,7 @@
         <table id="detailedTable">
           <thead>
             <tr>
-              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th class="action-col no-print">Actions</th>
+              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th class="action-col no-print">Edit</th>
             </tr>
           </thead>
           <tbody id="detailedTableBody"></tbody>
@@ -108,71 +83,29 @@
     </div>
   </div>
 
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <h3>Edit Attendance</h3>
-      <p id="editDateDisplay" style="font-size: 14px; color: #555;"></p>
-      
-      <input type="hidden" id="editEmpId">
-      <input type="hidden" id="editDate">
-      
-      <label>Check-In (HH:MM 24hr):</label><br>
-      <input type="time" id="editCheckIn" style="width: 80%;"><br><br>
-      
-      <label>Check-Out (HH:MM 24hr):</label><br>
-      <input type="time" id="editCheckOut" style="width: 80%;"><br><br>
-      
-      <button class="btn" onclick="saveEdit()" style="width: 85%;">Save Changes</button>
-      <div id="editMsg" style="margin-top: 10px; font-size: 14px;"></div>
-    </div>
-  </div>
-
   <script>
-    // PASTE YOUR UPDATED WEB APP URL HERE
+    // PASTE YOUR SCRIPT_URL
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
-    let currentUserRole = "";
-    let currentUserDept = "";
+    // ... Keep your login(), formatTime(), openModal(), closeModal(), saveEdit(), processExcel() ...
 
-    function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
-      const msg = document.getElementById("message");
+    // NEW: Save Calendar Setting
+    function saveSetting() {
+      const msg = document.getElementById("settingMsg");
+      const sDate = document.getElementById("settingDate").value;
+      const sType = document.getElementById("settingType").value;
+      const sDesc = document.getElementById("settingDesc").value;
 
-      if(!user || !pass) return msg.innerText = "Fill in all fields.";
-      msg.innerText = "Authenticating..."; msg.style.color = "blue";
+      if(!sDate || !sDesc) return msg.innerText = "Fill Date & Description.", msg.style.color="red";
+      msg.innerText = "Saving...", msg.style.color="blue";
 
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          currentUserRole = data.role;
-          currentUserDept = data.department;
-          document.getElementById("loginScreen").style.display = "none";
-          document.getElementById("dashboard").style.display = "block";
-          document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
-          
-          if(data.role === "Admin") {
-            document.getElementById("adminUpload").style.display = "block";
-          } else {
-            const deptSelect = document.getElementById("filterDept");
-            deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
-            deptSelect.disabled = true;
-          }
-        } else {
-          msg.innerText = data.message; msg.style.color = "red";
-        }
+      fetch(SCRIPT_URL, { 
+        method: "POST", 
+        body: JSON.stringify({ action: "saveSetting", date: sDate, type: sType, desc: sDesc }) 
+      }).then(res => res.json()).then(data => {
+        msg.innerText = data.message;
+        msg.style.color = data.success ? "green" : "red";
       });
-    }
-
-    // Helper for ugly 1899 Excel times
-    function formatTime(timeStr) {
-      if (!timeStr || timeStr === "Missing") return "Missing";
-      if (timeStr.toString().includes("1899")) {
-        return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-      }
-      return timeStr;
     }
 
     function fetchReport() {
@@ -180,66 +113,77 @@
       const summaryTable = document.getElementById("summaryTable");
       const detailedTableContainer = document.getElementById("detailedTableContainer");
       
-      const filterMonth = document.getElementById("filterMonth").value;
-      const filterDept = document.getElementById("filterDept").value;
-      const filterEmpId = document.getElementById("filterEmpId").value.trim();
+      const filterStart = document.getElementById("filterStart").value;
+      const filterEnd = document.getElementById("filterEnd").value;
+      
+      if(!filterStart || !filterEnd) {
+          msg.innerText = "Please select both Start and End dates."; msg.style.color = "red"; return;
+      }
 
-      msg.innerText = "Loading report data..."; msg.style.color = "blue";
+      msg.innerText = "Loading data..."; msg.style.color = "blue";
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
-      document.querySelector('.print-btn').style.display = "none";
 
-      const payload = { action: "getReport", role: currentUserRole, department: currentUserDept, filters: { month: filterMonth, department: filterDept, empId: filterEmpId } };
+      const payload = { 
+        action: "getReport", role: currentUserRole, department: currentUserDept, 
+        filters: { 
+          startDate: filterStart, endDate: filterEnd, 
+          department: document.getElementById("filterDept").value, 
+          empId: document.getElementById("filterEmpId").value.trim() 
+        } 
+      };
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
       .then(data => {
         if(data.success && data.data.length > 0) {
           msg.innerText = "";
-          document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
-          document.getElementById("printHeader").innerText = `Monthly Attendance Report - ${filterMonth || "All Time"}`;
+          document.getElementById("printHeader").innerText = `Report: ${filterStart} to ${filterEnd}`;
 
-          if (filterEmpId === "") {
-            buildSummaryReport(data.data);
+          if (payload.filters.empId === "") {
+            buildSummaryReport(data.data, data.requiredHours);
             summaryTable.style.display = "table";
           } else {
-            buildDetailedReport(data.data);
+            buildDetailedReport(data.data, data.requiredHours);
             detailedTableContainer.style.display = "block";
             document.getElementById("detailedTable").style.display = "table";
           }
         } else {
-          msg.innerText = "No records found."; msg.style.color = "red";
+          msg.innerText = data.message || "No records found."; msg.style.color = "red";
         }
       });
     }
 
-    function buildSummaryReport(records) {
+    function buildSummaryReport(records, reqHours) {
       const tbody = document.getElementById("summaryTableBody");
       tbody.innerHTML = "";
       let summary = {};
 
       records.forEach(row => {
-        let day = new Date(row.date).getDate();
-        let weekNum = Math.ceil(day / 7);
-        if (weekNum > 5) weekNum = 5; 
         let hrs = parseFloat(row.hours) || 0;
-
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, dept: row.department, w1:0, w2:0, w3:0, w4:0, w5:0, total:0 };
-        summary[row.empId]["w" + weekNum] += hrs;
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, dept: row.department, total:0 };
         summary[row.empId].total += hrs;
       });
 
       for (let empId in summary) {
         let s = summary[empId];
-        tbody.innerHTML += `<tr><td>${empId}</td><td>${s.name}</td><td>${s.dept}</td><td>${s.w1.toFixed(2)}</td><td>${s.w2.toFixed(2)}</td><td>${s.w3.toFixed(2)}</td><td>${s.w4.toFixed(2)}</td><td>${s.w5.toFixed(2)}</td><td style="font-weight: bold; background-color: #d4edda;">${s.total.toFixed(2)} Hrs</td></tr>`;
+        let color = s.total < reqHours ? "red" : "green";
+        let statusTxt = s.total < reqHours ? "Deficit" : "Target Met";
+        
+        tbody.innerHTML += `<tr>
+          <td>${empId}</td><td>${s.name}</td><td>${s.dept}</td>
+          <td><b>${reqHours}</b></td>
+          <td style="color: ${color}; font-weight: bold;">${s.total.toFixed(2)}</td>
+          <td style="color: ${color};">${statusTxt}</td>
+        </tr>`;
       }
     }
 
-    function buildDetailedReport(records) {
+    function buildDetailedReport(records, reqHours) {
       const tbody = document.getElementById("detailedTableBody");
       const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
-      let w1=0, w2=0, w3=0, w4=0, w5=0, total=0;
+      let total=0;
       let empName = records[0].name;
 
       records.forEach(row => {
@@ -248,102 +192,21 @@
         
         let statusColor = "black";
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
-        if(row.status.includes("Missing")) statusColor = "red";
+        if(row.status.includes("Missing") || row.status.includes("Weekend") || row.status.includes("Holiday")) statusColor = "red";
 
-        // Pass exact data to the edit modal
         let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
 
         tbody.innerHTML += `<tr>
           <td>${new Date(row.date).toLocaleDateString()}</td>
-          <td>${inTime}</td>
-          <td>${outTime}</td>
+          <td>${inTime}</td><td>${outTime}</td>
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
-          <td>${row.hours}</td>
-          <td class="action-col no-print">${editBtnHtml}</td>
+          <td>${row.hours}</td><td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
 
-        let day = new Date(row.date).getDate();
-        let weekNum = Math.ceil(day / 7);
-        if (weekNum > 5) weekNum = 5; 
-        let hrs = parseFloat(row.hours) || 0;
-
-        if(weekNum === 1) w1 += hrs; if(weekNum === 2) w2 += hrs; if(weekNum === 3) w3 += hrs; if(weekNum === 4) w4 += hrs; if(weekNum === 5) w5 += hrs;
-        total += hrs;
+        total += parseFloat(row.hours) || 0;
       });
 
-      summaryBox.innerHTML = `Employee: ${empName} | W1: ${w1.toFixed(2)}h | W2: ${w2.toFixed(2)}h | W3: ${w3.toFixed(2)}h | W4: ${w4.toFixed(2)}h | W5: ${w5.toFixed(2)}h | <span style="color: green;">Total Month: ${total.toFixed(2)} Hours</span>`;
-    }
-
-    // --- MODAL & EDITING LOGIC ---
-    function openModal(empId, date, checkIn, checkOut) {
-      document.getElementById("editEmpId").value = empId;
-      document.getElementById("editDate").value = date;
-      document.getElementById("editDateDisplay").innerText = "Updating for Date: " + new Date(date).toLocaleDateString();
-      
-      // The <input type="time"> requires HH:MM format exactly
-      document.getElementById("editCheckIn").value = (checkIn !== "Missing") ? checkIn.slice(0,5) : "";
-      document.getElementById("editCheckOut").value = (checkOut !== "Missing") ? checkOut.slice(0,5) : "";
-      
-      document.getElementById("editMsg").innerText = "";
-      document.getElementById("editModal").style.display = "block";
-    }
-
-    function closeModal() {
-      document.getElementById("editModal").style.display = "none";
-    }
-
-    function saveEdit() {
-      const msg = document.getElementById("editMsg");
-      const inVal = document.getElementById("editCheckIn").value || "Missing";
-      const outVal = document.getElementById("editCheckOut").value || "Missing";
-      
-      msg.innerText = "Saving changes..."; msg.style.color = "blue";
-
-      const payload = {
-        action: "updateRecord",
-        empId: document.getElementById("editEmpId").value,
-        date: document.getElementById("editDate").value,
-        checkIn: inVal,
-        checkOut: outVal
-      };
-
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-      .then(res => res.json())
-      .then(data => {
-        if(data.success) {
-          msg.innerText = "Saved successfully! Refreshing..."; msg.style.color = "green";
-          setTimeout(() => {
-            closeModal();
-            fetchReport(); // Auto-refresh the table to show the updated times and newly calculated hours!
-          }, 1000);
-        } else {
-          msg.innerText = "Error: " + data.message; msg.style.color = "red";
-        }
-      });
-    }
-
-    function processExcel() {
-      const fileInput = document.getElementById('excelFile');
-      const msg = document.getElementById('uploadMsg');
-      if (!fileInput.files.length) { msg.innerText = "Please select a file first."; msg.style.color = "red"; return; }
-      msg.innerText = "Reading file..."; msg.style.color = "blue";
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, {raw: false});
-        msg.innerText = "Sending " + jsonRecords.length + " records to database...";
-        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: jsonRecords }) })
-        .then(response => response.json())
-        .then(result => {
-          if(result.success) { msg.innerText = "Success! " + result.message; msg.style.color = "green"; } 
-          else { msg.innerText = "Error: " + result.message; msg.style.color = "red"; }
-        });
-      };
-      reader.readAsArrayBuffer(file);
+      let color = total < reqHours ? "red" : "green";
+      summaryBox.innerHTML = `Employee: ${empName} | Target Hours: ${reqHours} | <span style="color: ${color};">Time Spent: ${total.toFixed(2)} Hours</span>`;
     }
   </script>
-</body>
-</html>
