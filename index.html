@@ -8,7 +8,7 @@
     body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; }
     .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1100px; margin: auto; }
     .login-box { max-width: 300px; margin: auto; text-align: center; padding-top: 50px; }
-    input, select { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    input, select, textarea { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
     .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .btn:hover { background-color: #218838; }
     .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; border: none; cursor: pointer; font-size: 12px; }
@@ -22,10 +22,20 @@
     
     .summary-box { background: #e9ecef; padding: 15px; margin-top: 20px; border-radius: 5px; font-weight: bold; text-align: center;}
     
-    #detailedTableContainer, #summaryTable, .print-btn { display: none; }
+    #detailedTableContainer, #summaryTable, .print-btn, .email-btn { display: none; }
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px; border-radius: 8px; text-align: center; }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 320px; border-radius: 8px; text-align: center; }
     .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+
+    /* TOAST NOTIFICATION STYLES */
+    #toast {
+      visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; 
+      border-radius: 5px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px; 
+      transform: translateX(-50%); font-size: 15px; box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+    }
+    #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
     @media print {
       body { background-color: white; padding: 0; }
@@ -38,13 +48,14 @@
 </head>
 <body>
 
+  <div id="toast"></div>
+
   <div class="container">
     <div id="loginScreen" class="login-box no-print">
       <h2>Portal Login</h2>
       <input type="text" id="username" placeholder="Username" style="width: 90%;"><br>
       <input type="password" id="password" placeholder="Password" style="width: 90%;"><br>
       <button class="btn" onclick="login()" style="width: 95%; margin-top: 10px;">Sign In</button>
-      <div id="message" style="margin-top: 10px;"></div>
     </div>
 
     <div id="dashboard" style="display: none;">
@@ -59,7 +70,6 @@
           <h4>1. Upload Machine Data</h4>
           <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="width: 100%;">
           <button class="btn" onclick="processExcel()">Process Data</button>
-          <span id="uploadMsg" style="font-size: 12px; display: block; margin-top: 5px;"></span>
         </div>
         <div style="flex: 1; padding-left: 15px;">
           <h4>2. Calendar Overrides</h4>
@@ -70,7 +80,6 @@
           </select>
           <input type="text" id="settingDesc" placeholder="e.g., Eid" style="width: 100px;">
           <button class="btn" style="background: #17a2b8;" onclick="saveSetting()">Save</button>
-          <div id="settingMsg" style="font-size: 12px; margin-top: 5px;"></div>
         </div>
       </div>
 
@@ -90,11 +99,11 @@
         <div><label>Employee ID:</label><br><input type="text" id="filterEmpId" placeholder="Blank for dept sum"></div>
         <div style="margin-top: 18px;">
           <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
+          <button class="btn email-btn" id="btnEmail" style="background-color: #17a2b8; margin-left: 5px;" onclick="openEmailModal()">✉️ Email</button>
           <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️</button>
         </div>
       </div>
       
-      <div id="reportMsg" class="no-print"></div>
       <h3 id="printHeader" style="display: none; text-align: center;">Attendance Report</h3>
 
       <table id="summaryTable">
@@ -132,27 +141,48 @@
       <label>Check-Out (HH:MM):</label><br>
       <input type="time" id="editCheckOut" style="width: 80%;"><br><br>
       <button class="btn" onclick="saveEdit()" style="width: 85%;">Save Changes</button>
-      <div id="editMsg" style="margin-top: 10px; font-size: 14px;"></div>
+    </div>
+  </div>
+
+  <div id="emailModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeEmailModal()">&times;</span>
+      <h3>Email Report</h3>
+      <p style="font-size: 12px; color: #555;">This will email the report currently shown on your screen to the employee.</p>
+      <textarea id="emailMessage" rows="4" style="width:90%; padding:10px;" placeholder="Add a custom message (optional)..."></textarea><br><br>
+      <button class="btn" onclick="sendEmailReport()" style="width: 95%; background-color: #17a2b8;">Send Email</button>
     </div>
   </div>
 
   <script>
     // 🚨 PASTE YOUR LATEST WEB APP URL HERE
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
+    const SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
     let currentUserRole = ""; let currentUserDept = "";
+
+    // TOAST NOTIFICATION FUNCTION
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      if(type === "error") toast.style.backgroundColor = "#dc3545";
+      else if(type === "info") toast.style.backgroundColor = "#007bff";
+      else toast.style.backgroundColor = "#28a745";
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
 
     function login() {
       const user = document.getElementById("username").value;
       const pass = document.getElementById("password").value;
-      const msg = document.getElementById("message");
-      if(!user || !pass) return msg.innerText = "Fill in all fields.";
-      msg.innerText = "Authenticating..."; msg.style.color = "blue";
+      if(!user || !pass) return showToast("Fill in all fields.", "error");
+      
+      showToast("Authenticating...", "info");
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
+          showToast("Welcome " + user + "!", "success");
           currentUserRole = data.role; currentUserDept = data.department;
           document.getElementById("loginScreen").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
@@ -164,8 +194,8 @@
             deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
             deptSelect.disabled = true;
           }
-        } else { msg.innerText = data.message; msg.style.color = "red"; }
-      }).catch(err => { msg.innerText = "Connection failed."; msg.style.color = "red"; });
+        } else { showToast(data.message, "error"); }
+      }).catch(err => { showToast("Connection failed.", "error"); });
     }
 
     function formatTime(timeStr) {
@@ -177,13 +207,11 @@
     function formatHours(decimalHrs) {
       let d = parseFloat(decimalHrs) || 0;
       if (d === 0) return "0h 0m";
-      let h = Math.floor(d);
-      let m = Math.round((d - h) * 60);
+      let h = Math.floor(d); let m = Math.round((d - h) * 60);
       return `${h}h ${m}m`;
     }
 
     function fetchReport() {
-      const msg = document.getElementById("reportMsg");
       const summaryTable = document.getElementById("summaryTable");
       const detailedTableContainer = document.getElementById("detailedTableContainer");
       
@@ -191,11 +219,12 @@
       const filterEnd = document.getElementById("filterEnd").value;
       const filterEmpId = document.getElementById("filterEmpId").value.trim();
       
-      if(!filterStart || !filterEnd) { msg.innerText = "Please select Start and End dates."; msg.style.color = "red"; return; }
+      if(!filterStart || !filterEnd) { return showToast("Please select Start and End dates.", "error"); }
 
-      msg.innerText = "Loading data..."; msg.style.color = "blue";
+      showToast("Loading data...", "info");
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
+      document.getElementById("btnEmail").style.display = "none";
 
       const payload = { action: "getReport", role: currentUserRole, department: currentUserDept, filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId } };
 
@@ -203,7 +232,6 @@
       .then(res => res.json())
       .then(data => {
         if(data.success && data.data.length > 0) {
-          msg.innerText = "";
           document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
           document.getElementById("printHeader").innerText = `Report: ${filterStart} to ${filterEnd}`;
@@ -211,11 +239,14 @@
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
             summaryTable.style.display = "table";
+            showToast("Summary report loaded.", "success");
           } else {
             buildDetailedReport(data.data, data.workingDays, data.requiredHours);
             detailedTableContainer.style.display = "block";
+            document.getElementById("btnEmail").style.display = "inline-block"; // Show email button for individual
+            showToast("Detailed report loaded.", "success");
           }
-        } else { msg.innerText = data.message || "No records found."; msg.style.color = "red"; }
+        } else { showToast(data.message || "No records found.", "error"); }
       });
     }
 
@@ -226,10 +257,8 @@
 
       records.forEach(row => {
         if (!summary[row.empId]) summary[row.empId] = { name: row.name, dept: row.department, total:0, absents:0, leaves:0, holidays:0 };
-        
         let hrs = parseFloat(row.hours) || 0;
         summary[row.empId].total += hrs;
-        
         if (row.status === "Absent") summary[row.empId].absents++;
         if (row.status.toLowerCase().includes("leave")) summary[row.empId].leaves++;
         if (row.status === "Holiday") summary[row.empId].holidays++; 
@@ -268,9 +297,7 @@
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
         if(row.status.toLowerCase().includes("leave")) leaves++;
 
-        // Calculate Target per day: Normal days get 8 hours, Holidays/Offdays get 0
         let targetHours = (row.dayType === "Normal") ? 8 : 0;
-        
         let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
 
         tbody.innerHTML += `<tr>
@@ -286,89 +313,92 @@
       });
 
       let color = total < reqHours ? "red" : "green";
-      summaryBox.innerHTML = `
-        Employee: <b>${empName}</b> | 
-        Work Days: ${workingDays} | 
-        Absents: <span style="color:red">${absents}</span> | 
-        Target: ${formatHours(reqHours)} | 
-        Spent: <span style="color: ${color};">${formatHours(total)}</span>
-      `;
+      summaryBox.innerHTML = `Employee: <b>${empName}</b> | Work Days: ${workingDays} | Absents: <span style="color:red">${absents}</span> | Target: ${formatHours(reqHours)} | Spent: <span style="color: ${color};">${formatHours(total)}</span>`;
     }
 
     function openModal(empId, date, checkIn, checkOut) {
-      document.getElementById("editEmpId").value = empId;
-      document.getElementById("editDate").value = date;
+      document.getElementById("editEmpId").value = empId; document.getElementById("editDate").value = date;
       document.getElementById("editDateDisplay").innerText = "Updating for Date: " + new Date(date).toLocaleDateString();
       document.getElementById("editCheckIn").value = (checkIn !== "Missing" && checkIn !== "-") ? checkIn.slice(0,5) : "";
       document.getElementById("editCheckOut").value = (checkOut !== "Missing" && checkOut !== "-") ? checkOut.slice(0,5) : "";
-      document.getElementById("editMsg").innerText = "";
       document.getElementById("editModal").style.display = "block";
     }
 
     function closeModal() { document.getElementById("editModal").style.display = "none"; }
+    function openEmailModal() { document.getElementById("emailModal").style.display = "block"; document.getElementById("emailMessage").value = ""; }
+    function closeEmailModal() { document.getElementById("emailModal").style.display = "none"; }
 
     function saveEdit() {
-      const msg = document.getElementById("editMsg");
       const inVal = document.getElementById("editCheckIn").value || "Missing";
       const outVal = document.getElementById("editCheckOut").value || "Missing";
+      showToast("Saving changes...", "info");
       
-      msg.innerText = "Saving changes..."; msg.style.color = "blue";
-      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal };
+      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal, role: currentUserRole, dept: currentUserDept };
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
       .then(data => {
-        if(data.success) { msg.innerText = "Saved! Refreshing..."; msg.style.color = "green"; setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
-        else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+        if(data.success) { showToast("Saved! Refreshing...", "success"); setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
+        else { showToast(data.message, "error"); }
+      });
+    }
+
+    function sendEmailReport() {
+      const filterStart = document.getElementById("filterStart").value;
+      const filterEnd = document.getElementById("filterEnd").value;
+      const filterEmpId = document.getElementById("filterEmpId").value.trim();
+      const customMessage = document.getElementById("emailMessage").value.trim();
+
+      if(!filterEmpId) { return showToast("No employee selected.", "error"); }
+      showToast("Sending email... Please wait.", "info");
+      closeEmailModal();
+
+      const payload = { 
+        action: "emailReport", role: currentUserRole, department: currentUserDept, empId: filterEmpId, customMessage: customMessage,
+        filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId }
+      };
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) { showToast(data.message, "success"); } 
+        else { showToast(data.message, "error"); }
       });
     }
 
     function saveSetting() {
-      const dateVal = document.getElementById("settingDate").value;
-      const typeVal = document.getElementById("settingType").value;
-      const descVal = document.getElementById("settingDesc").value;
-      const msg = document.getElementById("settingMsg");
+      const dateVal = document.getElementById("settingDate").value; const typeVal = document.getElementById("settingType").value; const descVal = document.getElementById("settingDesc").value;
+      if (!dateVal) { return showToast("Please select a date.", "error"); }
+      showToast("Saving...", "info");
 
-      if (!dateVal) { msg.innerText = "Please select a date."; msg.style.color = "red"; return; }
-      msg.innerText = "Saving..."; msg.style.color = "blue";
-
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "saveSetting", date: dateVal, type: typeVal, desc: descVal })
-      })
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSetting", date: dateVal, type: typeVal, desc: descVal }) })
       .then(res => res.json())
       .then(data => {
-        if(data.success) { msg.innerText = "Saved successfully!"; msg.style.color = "green"; } 
-        else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
-      }).catch(err => { msg.innerText = "Network error."; msg.style.color = "red"; });
+        if(data.success) showToast("Date setting saved successfully!", "success"); 
+        else showToast(data.message, "error");
+      });
     }
 
     function processExcel() {
       const fileInput = document.getElementById("excelFile");
-      const msg = document.getElementById("uploadMsg");
-      
-      if (!fileInput.files.length) { msg.innerText = "Please select an Excel/CSV file first."; msg.style.color = "red"; return; }
-      msg.innerText = "Reading file locally..."; msg.style.color = "blue";
+      if (!fileInput.files.length) { return showToast("Please select an Excel/CSV file first.", "error"); }
+      showToast("Reading file locally...", "info");
       
       const reader = new FileReader();
       reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, {type: 'array'});
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sheet, {raw: false});
 
-        msg.innerText = "Uploading data... Please wait.";
+        showToast("Uploading data... Please wait.", "info");
         
-        fetch(SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "upload", records: json })
-        })
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: json }) })
         .then(res => res.json())
         .then(data => {
-          if(data.success) { msg.innerText = data.message; msg.style.color = "green"; } 
-          else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
-        }).catch(err => { msg.innerText = "Upload failed. Check your connection."; msg.style.color = "red"; });
+          if(data.success) showToast(data.message, "success"); 
+          else showToast(data.message, "error");
+        });
       };
       reader.readAsArrayBuffer(fileInput.files[0]);
     }
