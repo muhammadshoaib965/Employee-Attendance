@@ -111,7 +111,7 @@
         <table id="detailedTable">
           <thead>
             <tr>
-              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Hours</th><th class="action-col no-print">Edit</th>
+              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Target Hrs</th><th>Time Spent</th><th class="action-col no-print">Edit</th>
             </tr>
           </thead>
           <tbody id="detailedTableBody"></tbody>
@@ -174,7 +174,6 @@
       return timeStr;
     }
 
-    // NEW: Converts 8.5 to "8h 30m"
     function formatHours(decimalHrs) {
       let d = parseFloat(decimalHrs) || 0;
       if (d === 0) return "0h 0m";
@@ -266,9 +265,12 @@
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day")) statusColor = "orange";
         if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; absents++; }
         if(row.status === "Offday") statusColor = "#888";
-        if(row.status === "Holiday") statusColor = "#17a2b8";
+        if(row.status.includes("Holiday")) statusColor = "#17a2b8";
         if(row.status.toLowerCase().includes("leave")) leaves++;
 
+        // Calculate Target per day: Normal days get 8 hours, Holidays/Offdays get 0
+        let targetHours = (row.dayType === "Normal") ? 8 : 0;
+        
         let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
 
         tbody.innerHTML += `<tr>
@@ -276,7 +278,9 @@
           <td style="color:${inTime==='Missing'?'red':'inherit'}">${inTime}</td>
           <td style="color:${outTime==='Missing'?'red':'inherit'}">${outTime}</td>
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
-          <td>${formatHours(row.hours)}</td><td class="action-col no-print">${editBtnHtml}</td>
+          <td><b>${formatHours(targetHours)}</b></td>
+          <td>${formatHours(row.hours)}</td>
+          <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
         total += parseFloat(row.hours) || 0;
       });
@@ -301,6 +305,24 @@
       document.getElementById("editModal").style.display = "block";
     }
 
+    function closeModal() { document.getElementById("editModal").style.display = "none"; }
+
+    function saveEdit() {
+      const msg = document.getElementById("editMsg");
+      const inVal = document.getElementById("editCheckIn").value || "Missing";
+      const outVal = document.getElementById("editCheckOut").value || "Missing";
+      
+      msg.innerText = "Saving changes..."; msg.style.color = "blue";
+      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal };
+
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) { msg.innerText = "Saved! Refreshing..."; msg.style.color = "green"; setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
+        else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+      });
+    }
+
     function saveSetting() {
       const dateVal = document.getElementById("settingDate").value;
       const typeVal = document.getElementById("settingType").value;
@@ -316,31 +338,17 @@
       })
       .then(res => res.json())
       .then(data => {
-        if(data.success) { 
-          msg.innerText = "Saved successfully!"; 
-          msg.style.color = "green"; 
-        } else { 
-          msg.innerText = "Error: " + data.message; 
-          msg.style.color = "red"; 
-        }
-      }).catch(err => { 
-        msg.innerText = "Network error."; 
-        msg.style.color = "red"; 
-      });
+        if(data.success) { msg.innerText = "Saved successfully!"; msg.style.color = "green"; } 
+        else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+      }).catch(err => { msg.innerText = "Network error."; msg.style.color = "red"; });
     }
 
     function processExcel() {
       const fileInput = document.getElementById("excelFile");
       const msg = document.getElementById("uploadMsg");
       
-      if (!fileInput.files.length) { 
-        msg.innerText = "Please select an Excel/CSV file first."; 
-        msg.style.color = "red"; 
-        return; 
-      }
-
-      msg.innerText = "Reading file locally..."; 
-      msg.style.color = "blue";
+      if (!fileInput.files.length) { msg.innerText = "Please select an Excel/CSV file first."; msg.style.color = "red"; return; }
+      msg.innerText = "Reading file locally..."; msg.style.color = "blue";
       
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -358,20 +366,12 @@
         })
         .then(res => res.json())
         .then(data => {
-          if(data.success) { 
-            msg.innerText = data.message; 
-            msg.style.color = "green"; 
-          } else { 
-            msg.innerText = "Error: " + data.message; 
-            msg.style.color = "red"; 
-          }
-        }).catch(err => { 
-          msg.innerText = "Upload failed. Check your connection."; 
-          msg.style.color = "red"; 
-        });
+          if(data.success) { msg.innerText = data.message; msg.style.color = "green"; } 
+          else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+        }).catch(err => { msg.innerText = "Upload failed. Check your connection."; msg.style.color = "red"; });
       };
       reader.readAsArrayBuffer(fileInput.files[0]);
     }
-</script>
+  </script>
 </body>
 </html>
