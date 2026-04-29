@@ -301,26 +301,77 @@
       document.getElementById("editModal").style.display = "block";
     }
 
-    function saveSetting() { /* ... kept identical to previous version ... */ }
-    function closeModal() { document.getElementById("editModal").style.display = "none"; }
+    function saveSetting() {
+      const dateVal = document.getElementById("settingDate").value;
+      const typeVal = document.getElementById("settingType").value;
+      const descVal = document.getElementById("settingDesc").value;
+      const msg = document.getElementById("settingMsg");
 
-    function saveEdit() {
-      const msg = document.getElementById("editMsg");
-      const inVal = document.getElementById("editCheckIn").value || "Missing";
-      const outVal = document.getElementById("editCheckOut").value || "Missing";
-      
-      msg.innerText = "Saving changes..."; msg.style.color = "blue";
-      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal };
+      if (!dateVal) { msg.innerText = "Please select a date."; msg.style.color = "red"; return; }
+      msg.innerText = "Saving..."; msg.style.color = "blue";
 
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "saveSetting", date: dateVal, type: typeVal, desc: descVal })
+      })
       .then(res => res.json())
       .then(data => {
-        if(data.success) { msg.innerText = "Saved! Refreshing..."; msg.style.color = "green"; setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
-        else { msg.innerText = "Error: " + data.message; msg.style.color = "red"; }
+        if(data.success) { 
+          msg.innerText = "Saved successfully!"; 
+          msg.style.color = "green"; 
+        } else { 
+          msg.innerText = "Error: " + data.message; 
+          msg.style.color = "red"; 
+        }
+      }).catch(err => { 
+        msg.innerText = "Network error."; 
+        msg.style.color = "red"; 
       });
     }
 
-    function processExcel() { /* ... kept identical to previous version ... */ }
-  </script>
+    function processExcel() {
+      const fileInput = document.getElementById("excelFile");
+      const msg = document.getElementById("uploadMsg");
+      
+      if (!fileInput.files.length) { 
+        msg.innerText = "Please select an Excel/CSV file first."; 
+        msg.style.color = "red"; 
+        return; 
+      }
+
+      msg.innerText = "Reading file locally..."; 
+      msg.style.color = "blue";
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        msg.innerText = "Uploading data... Please wait.";
+        
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "upload", records: json })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if(data.success) { 
+            msg.innerText = data.message; 
+            msg.style.color = "green"; 
+          } else { 
+            msg.innerText = "Error: " + data.message; 
+            msg.style.color = "red"; 
+          }
+        }).catch(err => { 
+          msg.innerText = "Upload failed. Check your connection."; 
+          msg.style.color = "red"; 
+        });
+      };
+      reader.readAsArrayBuffer(fileInput.files[0]);
+    }
+</script>
 </body>
 </html>
