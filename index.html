@@ -326,15 +326,16 @@
         summary[row.empId].rawOT += parseFloat(row.overtime) || 0;
       });
 
-      // NO DEDUCTIONS LOGIC - Using pure rawOT
       for (let empId in summary) {
         let s = summary[empId];
         let totalSpent = s.total;
         let totalTarget = reqHours;
         let finalOvertime = s.rawOT; 
         
-        let color = (totalSpent >= totalTarget) ? "green" : "red";
-        let statusTxt = (totalSpent >= totalTarget) ? "Target Met" : "Deficit";
+        // NEW LOGIC: Only mark red and "Deficit" if spent time is LESS than 80% of total target
+        let threshold = totalTarget * 0.8;
+        let color = (totalSpent >= threshold) ? "green" : "red";
+        let statusTxt = (totalSpent >= threshold) ? "Target Met" : "Deficit";
         
         tbody.innerHTML += `<tr>
           <td>${empId}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
@@ -384,8 +385,9 @@
         totalRawOT += parseFloat(row.overtime) || 0;
       });
 
-      // NO DEDUCTIONS LOGIC - using purely totalRawOT
-      let color = totalSpent >= reqHours ? "green" : "red";
+      // NEW LOGIC: Only mark red if total spent is LESS than 80% of target
+      let threshold = reqHours * 0.8;
+      let color = totalSpent >= threshold ? "green" : "red";
       
       summaryBox.innerHTML = `
         Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b><br><br>
