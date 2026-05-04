@@ -329,7 +329,11 @@
 
       for (let empId in summary) {
         let s = summary[empId];
-        let isTargetMet = s.total >= (reqHours * 0.8);
+        let isTargetMet = s.total >= reqHours;
+        
+        // OVERTIME SAFEGUARD: Reset overtime to 0 if total spent hours < required hours for the selected period.
+        if (s.total < reqHours) { s.overtime = 0; }
+
         let color = isTargetMet ? "green" : "red";
         let statusTxt = isTargetMet ? "Target Met" : "Deficit";
         
@@ -358,7 +362,7 @@
         let outTime = formatTime(row.checkOut);
         
         let statusColor = "black";
-        if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Early")) statusColor = "orange";
+        if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "orange";
         if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; absents++; }
         if(row.status === "Offday") statusColor = "#888";
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
@@ -381,7 +385,10 @@
         overtime += parseFloat(row.overtime) || 0;
       });
 
-      let color = total >= (reqHours * 0.8) ? "green" : "red";
+      // OVERTIME SAFEGUARD: Reset summary block overtime to 0 if total spent hours < required hours
+      if (total < reqHours) { overtime = 0; }
+
+      let color = total >= reqHours ? "green" : "red";
       
       summaryBox.innerHTML = `Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b> | Work Days: ${workingDays} | Target: ${formatHours(reqHours)} | Spent: <span style="color: ${color};">${formatHours(total)}</span> | Overtime: <span style="color: #d35400;">${formatHours(overtime)}</span>`;
     }
