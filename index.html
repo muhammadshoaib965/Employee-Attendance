@@ -1,66 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <base target="_top">
-  <title>FAST-NUCES Multan Campus - Attendance System</title>
+  <title>FAST-NUCES Multan - Portal</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-    h2 { color: #0056b3; text-align: center; margin-bottom: 20px; }
-    .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1000px; margin: 0 auto 20px; }
-    .input-group { margin-bottom: 15px; }
-    .input-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
-    .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-    button { background-color: #0056b3; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: bold; }
-    button:hover { background-color: #004494; }
-    .btn-secondary { background-color: #6c757d; }
-    .btn-secondary:hover { background-color: #5a6268; }
-    .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; font-size: 12px; }
-    .btn-edit:hover { background-color: #e0a800; }
-    .btn-email { background-color: #17a2b8; float: right; }
-    .btn-email:hover { background-color: #138496; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; background: #0056b3; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; }
-    .header-bar span { font-weight: bold; font-size: 16px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-    th { background-color: #0056b3; color: white; }
-    tr:nth-child(even) { background-color: #f9f9f9; }
-    tr:hover { background-color: #f1f1f1; }
-    
-    .toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 12px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); }
-    .toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    :root {
+      --primary-blue: #0A3663; /* FAST Official Dark Blue */
+      --secondary-blue: #145A9E;
+      --accent-gold: #F4A81D; /* FAST Official Gold */
+      --bg-color: #F4F7F6;
+      --card-bg: #FFFFFF;
+      --text-main: #2C3E50;
+      --text-muted: #6C7A89;
+      --border-color: #E2E8F0;
+      --success: #10B981;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+    }
 
-    .modal { display: none; position: fixed; z-index: 500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: #fff; margin: 10% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .modal-content h3 { margin-top: 0; color: #0056b3; }
-    
-    .filters-container { display: flex; gap: 15px; flex-wrap: wrap; background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    .filters-container .input-group { margin-bottom: 0; flex: 1; min-width: 150px; }
-    
-    .summary-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 15px; border-left: 5px solid #0056b3; }
-    .print-btn { background-color: #28a745; margin-bottom: 15px; display: none; float: right; margin-left: 10px; }
-    .print-btn:hover { background-color: #218838; }
-    .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; font-size: 22px; font-weight: bold; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: var(--bg-color); 
+      margin: 0; 
+      padding: 30px 20px; 
+      color: var(--text-main); 
+    }
 
-    .developer-credit { text-align: center; margin-top: 30px; padding-bottom: 20px; font-size: 12px; color: #888; }
+    h2, h3 { color: var(--primary-blue); font-weight: 600; }
     
-    .login-links { text-align: center; margin-top: 15px; font-size: 14px; }
-    .login-links a { color: #0056b3; text-decoration: none; margin: 0 10px; }
-    .login-links a:hover { text-decoration: underline; }
+    .logo-container { text-align: center; margin-bottom: 20px; }
+    .logo-container img { max-width: 130px; height: auto; }
 
+    /* Cards & Containers */
+    .card { 
+      background: var(--card-bg); 
+      padding: 30px; 
+      border-radius: 12px; 
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+      max-width: 1050px; 
+      margin: 0 auto 25px; 
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+    
+    .login-card { max-width: 420px; margin-top: 60px; }
+    .login-card h2 { margin-bottom: 5px; font-size: 22px; }
+    .login-card p.subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px; margin-top: 0; }
+
+    /* Form Elements */
+    .input-group { margin-bottom: 18px; text-align: left; }
+    .input-group label { display: block; font-weight: 500; margin-bottom: 6px; color: var(--text-main); font-size: 13px; }
+    .input-group input, .input-group select, .input-group textarea { 
+      width: 100%; 
+      padding: 12px 15px; 
+      border: 1px solid var(--border-color); 
+      border-radius: 8px; 
+      box-sizing: border-box; 
+      font-size: 14px; 
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+      background-color: #FAFAFA;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      border-color: var(--secondary-blue);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(20, 90, 158, 0.15);
+      background-color: #FFF;
+    }
+
+    /* Buttons */
+    button { 
+      background-color: var(--primary-blue); 
+      color: white; 
+      padding: 12px 20px; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      font-weight: 500; 
+      transition: all 0.2s ease; 
+      font-family: 'Inter', sans-serif;
+    }
+    button:hover { background-color: var(--secondary-blue); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(20, 90, 158, 0.2); }
+    button:active { transform: translateY(0); }
+    
+    .btn-secondary { background-color: #64748B; }
+    .btn-secondary:hover { background-color: #475569; box-shadow: 0 4px 10px rgba(100, 116, 139, 0.2); }
+    
+    .btn-danger { background-color: var(--danger); }
+    .btn-danger:hover { background-color: #DC2626; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+
+    .btn-edit { background-color: var(--accent-gold); color: #000; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+    .btn-edit:hover { background-color: #E09612; }
+
+    .btn-email { background-color: #0284C7; float: right; }
+    .btn-email:hover { background-color: #0369A1; }
+
+    /* Dashboard Header */
+    .header-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: var(--primary-blue); 
+      color: white; 
+      padding: 15px 25px; 
+      border-radius: 12px; 
+      margin-bottom: 25px; 
+      box-shadow: 0 6px 15px rgba(10, 54, 99, 0.15); 
+    }
+    .header-left { display: flex; align-items: center; gap: 15px; }
+    .header-logo { height: 45px; background: white; padding: 4px; border-radius: 6px; }
+    .header-bar span { font-weight: 600; font-size: 17px; letter-spacing: 0.5px; }
+    .header-controls { display: flex; align-items: center; gap: 15px; font-size: 13px; font-weight: 500; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 14px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+    th, td { border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); padding: 14px 12px; text-align: center; }
+    th:last-child, td:last-child { border-right: none; }
+    tr:last-child td { border-bottom: none; }
+    th { background-color: #F8FAFC; color: var(--text-main); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+    tr:hover td { background-color: #F1F5F9; transition: background-color 0.2s ease; }
+    
+    /* Layout & Utilities */
+    .filters-container { display: flex; gap: 15px; flex-wrap: wrap; background: #F8FAFC; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .filters-container .input-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+    
+    .summary-box { background: #F8FAFC; padding: 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border-left: 5px solid var(--primary-blue); display: flex; flex-wrap: wrap; gap: 20px; }
+    .summary-box span { background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+    .print-btn { background-color: var(--success); margin-bottom: 15px; display: none; float: right; margin-left: 10px; }
+    .print-btn:hover { background-color: #059669; }
+    .print-header { display: none; text-align: center; margin-bottom: 20px; color: var(--text-main); font-size: 22px; font-weight: bold; }
+
+    .developer-credit { text-align: center; margin-top: 40px; padding-bottom: 20px; font-size: 12px; color: var(--text-muted); letter-spacing: 0.5px; }
+    
+    .login-links { text-align: center; margin-top: 20px; font-size: 13px; font-weight: 500; }
+    .login-links a { color: var(--secondary-blue); text-decoration: none; margin: 0 10px; transition: color 0.2s; }
+    .login-links a:hover { color: var(--primary-blue); text-decoration: underline; }
+
+    /* Modals */
+    .modal { display: none; position: fixed; z-index: 500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px); }
+    .modal-content { background-color: var(--card-bg); margin: 8% auto; padding: 30px; border-radius: 12px; width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideDown 0.3s ease-out; }
+    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-content h3 { margin-top: 0; color: var(--primary-blue); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
+
+    /* Toast */
+    .toast { visibility: hidden; min-width: 280px; background-color: #334155; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .toast.show { visibility: visible; animation: fadein 0.4s, fadeout 0.4s 2.6s; }
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 40px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    /* Print Styles */
     @media print {
       body { background-color: #fff; margin: 0; padding: 0; }
       #loginScreen, .header-bar, #adminControls, .filters-container, 
       .print-btn, .btn-email, .action-col, .no-print, .toast, #toast, h3.no-print { display: none !important; }
       .card { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
       .print-header { display: block !important; margin-bottom: 20px; color: #000; }
-      table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; page-break-inside: auto; }
-      tr { page-break-inside: avoid; page-break-after: auto; }
+      table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; }
       th, td { border: 1px solid #000 !important; padding: 8px !important; color: #000 !important; }
       th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
-      .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 16px !important; background: transparent !important; }
+      .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 14px !important; background: transparent !important; box-shadow: none !important; }
+      .summary-box span { border: none !important; padding: 0 !important; margin-right: 15px; }
       .developer-credit { display: block; margin-top: 40px; color: #000; }
     }
   </style>
@@ -69,17 +172,22 @@
 
   <div id="toast" class="toast">Message here</div>
 
-  <div id="loginScreen" class="card" style="max-width: 400px; margin-top: 100px;">
-    <h2>FAST-NUCES Multan Campus<br>Portal Login</h2>
+  <div id="loginScreen" class="card login-card">
+    <div class="logo-container">
+      <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="FAST-NUCES Logo">
+    </div>
+    <h2 style="text-align: center;">Portal Login</h2>
+    <p class="subtitle">FAST-NUCES Multan Campus Attendance System</p>
+    
     <div class="input-group">
-      <label>Username</label>
-      <input type="text" id="username" placeholder="Enter Username">
+      <label>Username (Emp ID)</label>
+      <input type="text" id="username" placeholder="Enter your username">
     </div>
     <div class="input-group">
       <label>Password</label>
-      <input type="password" id="password" placeholder="Enter Password">
+      <input type="password" id="password" placeholder="Enter your password">
     </div>
-    <button onclick="login()" style="width: 100%;">Login</button>
+    <button onclick="login()" style="width: 100%; margin-top: 10px; padding: 14px; font-size: 15px;">Secure Login</button>
     
     <div class="login-links">
       <a href="#" onclick="openPasswordModal(true)">Change Password</a> | 
@@ -88,45 +196,54 @@
   </div>
 
   <div id="dashboard" style="display: none;">
+    
     <div class="header-bar">
-      <span>FAST-NUCES Multan Campus - Attendance Dashboard</span>
-      <div>
-        <span id="roleText" style="margin-right: 15px;"></span>
-        <button class="btn-secondary" onclick="openPasswordModal(false)" style="padding: 5px 10px; font-size: 12px;">Change Password</button>
+      <div class="header-left">
+        <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="Logo" class="header-logo">
+        <span>FAST-NUCES Multan - Attendance Dashboard</span>
+      </div>
+      <div class="header-controls">
+        <span id="roleText"></span>
+        <button class="btn-secondary" onclick="openPasswordModal(false)" style="padding: 8px 12px; font-size: 12px;">Change Password</button>
+        <button class="btn-danger" onclick="logout()" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+          Logout
+        </button>
       </div>
     </div>
 
-    <div id="adminControls" class="card" style="display: none; flex-wrap: wrap; gap: 20px;">
+    <div id="adminControls" class="card" style="display: none; flex-wrap: wrap; gap: 30px;">
       <div style="flex: 1; min-width: 250px;">
-        <h3 style="margin-top: 0; color: #0056b3;">Upload Attendance (Excel)</h3>
-        <p style="font-size: 13px; color: #666;">Select the machine export file to process and save attendance records.</p>
-        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="margin-bottom: 10px; width: 100%;">
-        <button onclick="processExcel()">Upload & Process</button>
+        <h3>Upload Machine Data</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Select the machine Excel export to process daily logs.</p>
+        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px; width: 100%; padding: 10px; border: 1px dashed var(--secondary-blue); border-radius: 8px; background: #F8FAFC;">
+        <button onclick="processExcel()">Process Attendance Data</button>
       </div>
       
-      <div style="flex: 1; min-width: 250px; border-left: 1px solid #ddd; padding-left: 20px;">
-        <h3 style="margin-top: 0; color: #0056b3;">System Settings</h3>
-        <div class="input-group">
-          <label>Date</label>
-          <input type="date" id="settingDate">
+      <div style="flex: 1; min-width: 250px; border-left: 1px solid var(--border-color); padding-left: 30px;">
+        <h3>System Calendar Settings</h3>
+        <div style="display: flex; gap: 15px;">
+          <div class="input-group" style="flex: 1;">
+            <label>Date</label>
+            <input type="date" id="settingDate">
+          </div>
+          <div class="input-group" style="flex: 1;">
+            <label>Type</label>
+            <select id="settingType">
+              <option value="Holiday">Holiday</option>
+              <option value="Working Weekend">Working Weekend</option>
+            </select>
+          </div>
         </div>
         <div class="input-group">
-          <label>Type</label>
-          <select id="settingType">
-            <option value="Holiday">Holiday</option>
-            <option value="Working Weekend">Working Weekend</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>Description</label>
+          <label>Description / Occasion</label>
           <input type="text" id="settingDesc" placeholder="e.g., Eid al-Fitr">
         </div>
-        <button class="btn-secondary" onclick="saveSetting()">Save Setting</button>
+        <button class="btn-secondary" onclick="saveSetting()">Save to Calendar</button>
       </div>
     </div>
 
     <div class="card">
-      <h3 style="margin-top: 0; color: #0056b3;" class="no-print">Generate Reports</h3>
+      <h3 class="no-print" style="margin-bottom: 20px;">Report Generation Engine</h3>
       
       <div class="filters-container">
         <div class="input-group">
@@ -146,14 +263,14 @@
           <input type="text" id="filterEmpId" placeholder="Leave empty for all">
         </div>
         <div style="display: flex; align-items: flex-end;">
-          <button onclick="fetchReport()" style="height: 42px;">Search</button>
+          <button onclick="fetchReport()" style="height: 44px; padding: 0 25px;">Generate</button>
         </div>
       </div>
 
       <div id="printHeader" class="print-header"></div>
       
-      <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
-      <button id="btnEmail" class="btn-email print-btn" onclick="openEmailModal()" style="display:none;">📧 Send to Employee</button>
+      <button class="print-btn" onclick="window.print()">Print Document</button>
+      <button id="btnEmail" class="btn-email print-btn" onclick="openEmailModal()" style="display:none;">Email to Employee</button>
 
       <table id="summaryTable" style="display: none;">
         <thead>
@@ -185,7 +302,7 @@
               <th>Target Hrs</th>
               <th>Spent Hrs</th>
               <th>Daily OT</th>
-              <th class="action-col no-print">Action</th>
+              <th class="action-col no-print">Manage</th>
             </tr>
           </thead>
           <tbody id="detailedTableBody"></tbody>
@@ -193,13 +310,13 @@
       </div>
     </div>
     
-    <div class="developer-credit">Developed by Muhammad Shoaib</div>
+    <div class="developer-credit">Powered by <b>FAST-NUCES IT</b> | Developed by Muhammad Shoaib</div>
   </div>
 
   <div id="editModal" class="modal">
     <div class="modal-content">
       <h3>Edit Punch Record</h3>
-      <p id="editDateDisplay" style="color: #666; font-size: 14px; margin-top: -10px;"></p>
+      <p id="editDateDisplay" style="color: var(--text-muted); font-size: 13px; margin-top: -15px; margin-bottom: 20px;"></p>
       <input type="hidden" id="editEmpId">
       <input type="hidden" id="editDate">
       <div class="input-group">
@@ -210,9 +327,9 @@
         <label>Check-Out Time</label>
         <input type="time" id="editCheckOut">
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
         <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-        <button onclick="saveEdit()">Save Changes</button>
+        <button onclick="saveEdit()">Commit Changes</button>
       </div>
     </div>
   </div>
@@ -220,14 +337,14 @@
   <div id="emailModal" class="modal">
     <div class="modal-content">
       <h3>Send Official Report</h3>
-      <p style="font-size: 13px; color: #666;">This will email the detailed breakdown to the employee's registered email address.</p>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">This will automatically format and email the detailed breakdown to the employee's registered email address.</p>
       <div class="input-group">
         <label>Add Custom Note (Optional)</label>
         <textarea id="emailMessage" rows="4" placeholder="e.g., Please review your absents for this month..."></textarea>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
         <button class="btn-secondary" onclick="closeEmailModal()">Cancel</button>
-        <button class="btn-email" onclick="sendEmailReport()" style="float:none;">Send Email</button>
+        <button class="btn-email" onclick="sendEmailReport()" style="float:none;">Dispatch Email</button>
       </div>
     </div>
   </div>
@@ -251,7 +368,7 @@
         <label>Confirm New Password</label>
         <input type="password" id="confirmPassword">
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
         <button class="btn-secondary" onclick="closePasswordModal()">Cancel</button>
         <button onclick="saveNewPassword()">Update Password</button>
       </div>
@@ -261,12 +378,12 @@
   <div id="forgotModal" class="modal">
     <div class="modal-content">
       <h3>Forgot Password</h3>
-      <p style="font-size: 13px; color: #666;">Enter your Username (Emp ID). A temporary password will be sent to your registered email.</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Enter your administrative Username. A secure temporary password will be sent to your registered email.</p>
       <div class="input-group">
         <label>Username</label>
         <input type="text" id="forgotUsername" placeholder="Enter your Username">
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
         <button class="btn-secondary" onclick="closeForgotModal()">Cancel</button>
         <button onclick="sendForgotPassword()">Reset Password</button>
       </div>
@@ -282,9 +399,9 @@
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
       toast.innerText = msg;
-      if(type === "error") toast.style.backgroundColor = "#dc3545";
-      else if(type === "info") toast.style.backgroundColor = "#007bff";
-      else toast.style.backgroundColor = "#28a745";
+      if(type === "error") toast.style.backgroundColor = "#EF4444";
+      else if(type === "info") toast.style.backgroundColor = "#0284C7";
+      else toast.style.backgroundColor = "#10B981";
       toast.className = "show";
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
     }
@@ -294,18 +411,19 @@
       const pass = document.getElementById("password").value;
       if(!user || !pass) return showToast("Fill in all fields.", "error");
       
-      showToast("Authenticating...", "info");
+      showToast("Authenticating connection...", "info");
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          showToast("Welcome " + user + "!", "success");
+          showToast("Access Granted.", "success");
           currentUsername = user;
           currentUserRole = data.role; currentUserDept = data.department;
+          
           document.getElementById("loginScreen").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
-          document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
+          document.getElementById("roleText").innerHTML = `<b>${data.role}</b> | Dept: ${data.department}`;
           
           const deptSelect = document.getElementById("filterDept");
           deptSelect.innerHTML = "";
@@ -323,6 +441,32 @@
           }
         } else { showToast(data.message, "error"); }
       }).catch(err => { showToast("Connection failed.", "error"); });
+    }
+
+    // --- NEW LOGOUT FUNCTION ---
+    function logout() {
+      // Clear variables
+      currentUsername = "";
+      currentUserRole = "";
+      currentUserDept = "";
+      
+      // Clear inputs
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      
+      // Hide dashboard & show login
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginScreen").style.display = "block";
+      document.getElementById("adminControls").style.display = "none";
+      
+      // Clear tables
+      document.getElementById("summaryTable").style.display = "none";
+      document.getElementById("detailedTableContainer").style.display = "none";
+      document.querySelector('.print-btn').style.display = "none";
+      document.getElementById("btnEmail").style.display = "none";
+      document.getElementById("printHeader").style.display = "none";
+
+      showToast("Logged out successfully.", "success");
     }
 
     // Modal Controls
@@ -349,7 +493,7 @@
       if (!user || !oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
       if (newPass !== confPass) return showToast("New passwords do not match.", "error");
 
-      showToast("Updating password...", "info");
+      showToast("Updating security credentials...", "info");
       fetch(SCRIPT_URL, { 
         method: "POST", 
         body: JSON.stringify({ action: "changePassword", username: user, oldPassword: oldPass, newPassword: newPass }) 
@@ -365,7 +509,7 @@
       const user = document.getElementById("forgotUsername").value.trim();
       if (!user) return showToast("Please enter your Username.", "error");
 
-      showToast("Searching system and sending email...", "info");
+      showToast("Initiating password reset protocol...", "info");
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "forgotPassword", username: user }) })
       .then(res => res.json())
       .then(data => {
@@ -395,9 +539,9 @@
       const filterEnd = document.getElementById("filterEnd").value;
       const filterEmpId = document.getElementById("filterEmpId").value.trim();
       
-      if(!filterStart || !filterEnd) { return showToast("Please select Start and End dates.", "error"); }
+      if(!filterStart || !filterEnd) { return showToast("Please define a reporting period.", "error"); }
 
-      showToast("Loading data...", "info");
+      showToast("Querying database...", "info");
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
       document.getElementById("btnEmail").style.display = "none";
@@ -415,14 +559,14 @@
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
             summaryTable.style.display = "table";
-            showToast("Summary report loaded.", "success");
+            showToast("Summary generated successfully.", "success");
           } else {
             buildDetailedReport(data.data, data.workingDays, data.requiredHours);
             detailedTableContainer.style.display = "block";
             document.getElementById("btnEmail").style.display = "inline-block";
-            showToast("Detailed report loaded.", "success");
+            showToast("Detailed records loaded.", "success");
           }
-        } else { showToast(data.message || "No records found.", "error"); }
+        } else { showToast(data.message || "No records match the criteria.", "error"); }
       });
     }
 
@@ -448,17 +592,17 @@
         let finalOvertime = s.rawOT; 
         
         let threshold = totalTarget * 0.8;
-        let color = (totalSpent >= threshold) ? "green" : "red";
-        let statusTxt = (totalSpent >= threshold) ? "Target Met" : "Deficit";
-        let absentColor = (s.absents > 0) ? "red" : "black";
+        let color = (totalSpent >= threshold) ? "var(--success)" : "var(--danger)";
+        let statusTxt = (totalSpent >= threshold) ? "Compliant" : "Deficit";
+        let absentColor = (s.absents > 0) ? "var(--danger)" : "inherit";
         
         tbody.innerHTML += `<tr>
-          <td>${empId}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
+          <td><b>${empId}</b></td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
           <td>${workingDays}</td>
           <td style="color: ${absentColor}; font-weight: bold;">${s.absents}</td>
           <td><b>${formatHours(totalTarget)}</b></td>
           <td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
-          <td style="color: #d35400; font-weight: bold;">${formatHours(finalOvertime)}</td>
+          <td style="color: var(--warning); font-weight: bold;">${formatHours(finalOvertime)}</td>
           <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
         </tr>`;
       }
@@ -477,24 +621,24 @@
         let inTime = formatTime(row.checkIn);
         let outTime = formatTime(row.checkOut);
         
-        let statusColor = "black";
-        if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "orange";
-        if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; totalAbsents++; }
-        if(row.status === "Offday") statusColor = "#888";
-        if(row.status.includes("Holiday")) statusColor = "#17a2b8";
-        if(row.status === "Present" || row.status === "Target Met") statusColor = "green";
+        let statusColor = "inherit";
+        if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "var(--warning)";
+        if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "var(--danger)"; totalAbsents++; }
+        if(row.status === "Offday") statusColor = "var(--text-muted)";
+        if(row.status.includes("Holiday")) statusColor = "#0284C7";
+        if(row.status === "Present" || row.status === "Target Met") statusColor = "var(--success)";
 
         let targetHours = (row.dayType === "Normal") ? 8 : 0;
-        let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
+        let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Modify</button>`;
 
         tbody.innerHTML += `<tr>
-          <td>${new Date(row.date).toLocaleDateString()}</td>
-          <td style="color:${inTime==='Missing'?'red':'inherit'}">${inTime}</td>
-          <td style="color:${outTime==='Missing'?'red':'inherit'}">${outTime}</td>
-          <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
-          <td><b>${formatHours(targetHours)}</b></td>
-          <td>${formatHours(row.hours)}</td>
-          <td style="color: #d35400; font-weight: bold;">${formatHours(row.overtime)}</td>
+          <td>${new Date(row.date).toLocaleDateString('en-GB')}</td>
+          <td style="color:${inTime==='Missing'?'var(--danger)':'inherit'}"><b>${inTime}</b></td>
+          <td style="color:${outTime==='Missing'?'var(--danger)':'inherit'}"><b>${outTime}</b></td>
+          <td style="color: ${statusColor}; font-weight: 600;">${row.status}</td>
+          <td>${formatHours(targetHours)}</td>
+          <td><b>${formatHours(row.hours)}</b></td>
+          <td style="color: var(--warning); font-weight: bold;">${formatHours(row.overtime)}</td>
           <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
         totalSpent += parseFloat(row.hours) || 0;
@@ -502,22 +646,23 @@
       });
 
       let threshold = reqHours * 0.8;
-      let color = totalSpent >= threshold ? "green" : "red";
-      let absentColor = totalAbsents > 0 ? "red" : "black";
+      let color = totalSpent >= threshold ? "var(--success)" : "var(--danger)";
+      let absentColor = totalAbsents > 0 ? "var(--danger)" : "inherit";
       
       summaryBox.innerHTML = `
-        Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b><br><br>
-        <span style="display:inline-block; margin-right:20px;">Work Days: <b>${workingDays}</b></span>
-        <span style="display:inline-block; margin-right:20px;">Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span>
-        <span style="display:inline-block; margin-right:20px;">Target Time: <b>${formatHours(reqHours)}</b></span>
-        <span style="display:inline-block; margin-right:20px;">Total Spent Time: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
-        <span style="display:inline-block;">Total Overtime: <b style="color: #d35400;">${formatHours(totalRawOT)}</b></span>
+        <span>Employee: <b>${empName}</b> (${empDesig})</span>
+        <span>Dept: <b>${empDept}</b></span>
+        <span>Work Days: <b>${workingDays}</b></span>
+        <span>Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span>
+        <span>Target Time: <b>${formatHours(reqHours)}</b></span>
+        <span>Time Spent: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
+        <span>Total Overtime: <b style="color: var(--warning);">${formatHours(totalRawOT)}</b></span>
       `;
     }
 
     function openModal(empId, date, checkIn, checkOut) {
       document.getElementById("editEmpId").value = empId; document.getElementById("editDate").value = date;
-      document.getElementById("editDateDisplay").innerText = "Updating for Date: " + new Date(date).toLocaleDateString();
+      document.getElementById("editDateDisplay").innerText = "Updating log for: " + new Date(date).toLocaleDateString('en-GB');
       document.getElementById("editCheckIn").value = (checkIn !== "Missing" && checkIn !== "-") ? checkIn.slice(0,5) : "";
       document.getElementById("editCheckOut").value = (checkOut !== "Missing" && checkOut !== "-") ? checkOut.slice(0,5) : "";
       document.getElementById("editModal").style.display = "block";
@@ -530,14 +675,14 @@
     function saveEdit() {
       const inVal = document.getElementById("editCheckIn").value || "Missing";
       const outVal = document.getElementById("editCheckOut").value || "Missing";
-      showToast("Saving changes...", "info");
+      showToast("Processing override...", "info");
       
       const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal, role: currentUserRole, dept: currentUserDept };
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
       .then(data => {
-        if(data.success) { showToast("Saved! Refreshing...", "success"); setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
+        if(data.success) { showToast("Override successful. Refreshing...", "success"); setTimeout(() => { closeModal(); fetchReport(); }, 1000); } 
         else { showToast(data.message, "error"); }
       });
     }
@@ -548,8 +693,8 @@
       const filterEmpId = document.getElementById("filterEmpId").value.trim();
       const customMessage = document.getElementById("emailMessage").value.trim();
 
-      if(!filterEmpId) { return showToast("No employee selected.", "error"); }
-      showToast("Sending email... Please wait.", "info");
+      if(!filterEmpId) { return showToast("Critical error: No employee identified.", "error"); }
+      showToast("Dispatching report via internal mail server...", "info");
       closeEmailModal();
 
       const payload = { 
@@ -567,21 +712,21 @@
 
     function saveSetting() {
       const dateVal = document.getElementById("settingDate").value; const typeVal = document.getElementById("settingType").value; const descVal = document.getElementById("settingDesc").value;
-      if (!dateVal) { return showToast("Please select a date.", "error"); }
-      showToast("Saving...", "info");
+      if (!dateVal) { return showToast("Validation failed: Date required.", "error"); }
+      showToast("Updating calendar parameters...", "info");
 
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSetting", date: dateVal, type: typeVal, desc: descVal }) })
       .then(res => res.json())
       .then(data => {
-        if(data.success) showToast("Date setting saved successfully!", "success"); 
+        if(data.success) showToast("Calendar rule implemented.", "success"); 
         else showToast(data.message, "error");
       });
     }
 
     function processExcel() {
       const fileInput = document.getElementById("excelFile");
-      if (!fileInput.files.length) { return showToast("Please select an Excel/CSV file first.", "error"); }
-      showToast("Reading file locally...", "info");
+      if (!fileInput.files.length) { return showToast("No file detected for parsing.", "error"); }
+      showToast("Parsing local file buffers...", "info");
       
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -590,7 +735,7 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sheet, {raw: false});
 
-        showToast("Uploading data... Please wait.", "info");
+        showToast("Transmitting batch data to cloud...", "info");
         
         fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: json }) })
         .then(res => res.json())
