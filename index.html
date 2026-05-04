@@ -155,10 +155,11 @@
       text-align: center; 
       border-radius: 8px; 
       padding: 14px 20px; 
-      position: fixed; 
+      position: fixed; /* Keeps it on screen during scroll */
       z-index: 1000; 
       left: 50%; 
-      top: 25px; /* Moved to top */
+      top: -100px; /* Hidden off-screen by default */
+      opacity: 0;
       transform: translateX(-50%); 
       font-size: 15px; 
       font-weight: 500; 
@@ -167,10 +168,14 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
+      /* CSS Transitions replace hardcoded keyframes */
+      transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease, visibility 0.4s;
     }
-    .toast.show { visibility: visible; animation: slideDownToast 0.4s, slideUpToast 0.4s 2.6s; }
-    @keyframes slideDownToast { from {top: -50px; opacity: 0;} to {top: 25px; opacity: 1;} }
-    @keyframes slideUpToast { from {top: 25px; opacity: 1;} to {top: -50px; opacity: 0;} }
+    .toast.show { 
+      visibility: visible; 
+      top: 25px; /* Drops down */
+      opacity: 1; 
+    }
     
     /* Small spinner for processing state */
     .spinner {
@@ -426,30 +431,39 @@
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
     let currentUserRole = ""; let currentUserDept = ""; let currentUsername = "";
+    
+    // Global variable to hold our notification timeout
+    let toastTimeout;
 
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
       
-      // Clear previous styles/content
-      toast.innerHTML = "";
+      // Clear any existing timer so it doesn't accidentally hide our new message
+      if (toastTimeout) {
+        clearTimeout(toastTimeout);
+      }
       
-      // Determine style and icon based on type
+      // Set content and color
       if(type === "error") {
         toast.style.backgroundColor = "#EF4444";
         toast.innerHTML = `<span>❌</span> <span>${msg}</span>`;
       } else if(type === "info") {
         toast.style.backgroundColor = "#0284C7";
-        // Adds a visual spinning loader for processing states
         toast.innerHTML = `<div class="spinner"></div> <span>${msg}</span>`;
       } else {
         toast.style.backgroundColor = "#10B981";
         toast.innerHTML = `<span>✅</span> <span>${msg}</span>`;
       }
       
-      toast.className = "show";
+      // Show the toast
+      toast.className = "toast show";
       
-      // Auto-hide after 3 seconds
-      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+      // ONLY set a timer to hide it if it's NOT a loading ("info") message
+      if (type !== "info") {
+        toastTimeout = setTimeout(() => { 
+          toast.className = "toast"; 
+        }, 3500);
+      }
     }
 
     function login() {
@@ -510,7 +524,6 @@
       showToast("Logged out successfully.", "success");
     }
 
-    // Modal Controls
     function openPasswordModal(fromLogin) {
       const userField = document.getElementById("cpUsername");
       userField.value = fromLogin ? "" : currentUsername;
@@ -582,7 +595,9 @@
       
       if(!filterStart || !filterEnd) { return showToast("Please define a reporting period.", "error"); }
 
+      // Stays on screen while processing
       showToast("Searching database...", "info");
+      
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
       document.getElementById("btnEmail").style.display = "none";
@@ -600,6 +615,8 @@
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
             summaryTable.style.display = "table";
+            
+            // Replaces the loading message and then fades away after 3.5s
             showToast("Summary generated successfully.", "success");
           } else {
             buildDetailedReport(data.data, data.workingDays, data.requiredHours);
