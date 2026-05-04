@@ -2,7 +2,7 @@
 <html>
 <head>
   <base target="_top">
-  <title>University Attendance System</title>
+  <title>FAST-NUCES Multan Campus - Attendance System</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
@@ -44,6 +44,8 @@
     .print-btn:hover { background-color: #218838; }
     .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; font-size: 22px; font-weight: bold; }
 
+    .developer-credit { text-align: center; margin-top: 30px; padding-bottom: 20px; font-size: 12px; color: #888; }
+
     @media print {
       body { background-color: #fff; margin: 0; padding: 0; }
       #loginScreen, .header-bar, #adminControls, .filters-container, 
@@ -55,6 +57,7 @@
       th, td { border: 1px solid #000 !important; padding: 8px !important; color: #000 !important; }
       th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
       .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 16px !important; background: transparent !important; }
+      .developer-credit { display: block; margin-top: 40px; color: #000; }
     }
   </style>
 </head>
@@ -63,7 +66,7 @@
   <div id="toast" class="toast">Message here</div>
 
   <div id="loginScreen" class="card" style="max-width: 400px; margin-top: 100px;">
-    <h2>University Portal Login</h2>
+    <h2>FAST-NUCES Multan Campus<br>Portal Login</h2>
     <div class="input-group">
       <label>Username</label>
       <input type="text" id="username" placeholder="Enter Username">
@@ -77,8 +80,11 @@
 
   <div id="dashboard" style="display: none;">
     <div class="header-bar">
-      <span>University Attendance Dashboard</span>
-      <span id="roleText"></span>
+      <span>FAST-NUCES Multan Campus - Attendance Dashboard</span>
+      <div>
+        <span id="roleText" style="margin-right: 15px;"></span>
+        <button class="btn-secondary" onclick="openPasswordModal()" style="padding: 5px 10px; font-size: 12px;">Change Password</button>
+      </div>
     </div>
 
     <div id="adminControls" class="card" style="display: none; flex-wrap: wrap; gap: 20px;">
@@ -177,6 +183,8 @@
         </table>
       </div>
     </div>
+    
+    <div class="developer-credit">Developed by Muhammad Shoaib</div>
   </div>
 
   <div id="editModal" class="modal">
@@ -215,11 +223,33 @@
     </div>
   </div>
 
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <h3>Change Password</h3>
+      <div class="input-group">
+        <label>Old Password</label>
+        <input type="password" id="oldPassword">
+      </div>
+      <div class="input-group">
+        <label>New Password</label>
+        <input type="password" id="newPassword">
+      </div>
+      <div class="input-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="confirmPassword">
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button class="btn-secondary" onclick="closePasswordModal()">Cancel</button>
+        <button onclick="saveNewPassword()">Update Password</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // 🚨 PASTE YOUR LATEST WEB APP URL HERE
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
-    let currentUserRole = ""; let currentUserDept = "";
+    let currentUserRole = ""; let currentUserDept = ""; let currentUsername = "";
 
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
@@ -243,6 +273,7 @@
       .then(data => {
         if (data.success) {
           showToast("Welcome " + user + "!", "success");
+          currentUsername = user;
           currentUserRole = data.role; currentUserDept = data.department;
           document.getElementById("loginScreen").style.display = "none";
           document.getElementById("dashboard").style.display = "block";
@@ -264,6 +295,35 @@
           }
         } else { showToast(data.message, "error"); }
       }).catch(err => { showToast("Connection failed.", "error"); });
+    }
+
+    function openPasswordModal() {
+      document.getElementById("oldPassword").value = "";
+      document.getElementById("newPassword").value = "";
+      document.getElementById("confirmPassword").value = "";
+      document.getElementById("passwordModal").style.display = "block";
+    }
+
+    function closePasswordModal() { document.getElementById("passwordModal").style.display = "none"; }
+
+    function saveNewPassword() {
+      const oldPass = document.getElementById("oldPassword").value;
+      const newPass = document.getElementById("newPassword").value;
+      const confPass = document.getElementById("confirmPassword").value;
+
+      if (!oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
+      if (newPass !== confPass) return showToast("New passwords do not match.", "error");
+
+      showToast("Updating password...", "info");
+      fetch(SCRIPT_URL, { 
+        method: "POST", 
+        body: JSON.stringify({ action: "changePassword", username: currentUsername, oldPassword: oldPass, newPassword: newPass }) 
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) { showToast(data.message, "success"); closePasswordModal(); } 
+        else { showToast(data.message, "error"); }
+      });
     }
 
     function formatTime(timeStr) {
@@ -302,7 +362,7 @@
         if(data.success && data.data.length > 0) {
           document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
-          document.getElementById("printHeader").innerText = `Official Attendance Report (${filterStart} to ${filterEnd})`;
+          document.getElementById("printHeader").innerHTML = `FAST-NUCES Multan Campus<br>Official Attendance Report<br><span style="font-size:16px; font-weight:normal;">(${filterStart} to ${filterEnd})</span>`;
 
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
@@ -328,7 +388,6 @@
         summary[row.empId].total += parseFloat(row.hours) || 0;
         summary[row.empId].rawOT += parseFloat(row.overtime) || 0;
         
-        // Count Absents
         if (row.status.includes("Absent") || row.status.includes("Missing")) {
           summary[row.empId].absents += 1;
         }
@@ -372,10 +431,7 @@
         
         let statusColor = "black";
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "orange";
-        if(row.status === "Absent" || row.status.includes("Missing")) {
-          statusColor = "red";
-          totalAbsents++; // Add to absent count
-        }
+        if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; totalAbsents++; }
         if(row.status === "Offday") statusColor = "#888";
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
         if(row.status === "Present" || row.status === "Target Met") statusColor = "green";
