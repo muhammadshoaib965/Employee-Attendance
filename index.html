@@ -47,24 +47,14 @@
     /* STRICT PRINT CSS TO HIDE THE PORTAL/FRONTEND */
     @media print {
       body { background-color: #fff; margin: 0; padding: 0; }
-      
-      /* Force hide EVERYTHING that isn't the report */
       #loginScreen, .header-bar, #adminControls, .filters-container, 
-      .print-btn, .btn-email, .action-col, .no-print, .toast, #toast, h3.no-print { 
-        display: none !important; 
-      }
-      
-      /* Flatten the card holding the table so it prints cleanly */
+      .print-btn, .btn-email, .action-col, .no-print, .toast, #toast, h3.no-print { display: none !important; }
       .card { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
-      
       .print-header { display: block !important; margin-bottom: 20px; color: #000; }
-      
-      /* Style tables to print sharply in black and white */
       table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; page-break-inside: auto; }
       tr { page-break-inside: avoid; page-break-after: auto; }
       th, td { border: 1px solid #000 !important; padding: 8px !important; color: #000 !important; }
       th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
-      
       .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 16px !important; background: transparent !important; }
     }
   </style>
@@ -166,7 +156,7 @@
             <th>Work Days</th>
             <th>Target Hrs</th>
             <th>Spent Hrs</th>
-            <th>Final Overtime</th>
+            <th>Total Overtime</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -184,7 +174,7 @@
               <th>Status</th>
               <th>Target Hrs</th>
               <th>Spent Hrs</th>
-              <th>Raw Daily OT</th>
+              <th>Daily OT</th>
               <th class="action-col no-print">Action</th>
             </tr>
           </thead>
@@ -336,16 +326,12 @@
         summary[row.empId].rawOT += parseFloat(row.overtime) || 0;
       });
 
+      // NO DEDUCTIONS LOGIC - Using pure rawOT
       for (let empId in summary) {
         let s = summary[empId];
-        
-        // --- NEW PERIOD OVERTIME OFFSET LOGIC ---
         let totalSpent = s.total;
         let totalTarget = reqHours;
-        let rawOvertime = s.rawOT;
-        
-        let excessHours = Math.max(0, totalSpent - totalTarget);
-        let finalOvertime = Math.min(rawOvertime, excessHours);
+        let finalOvertime = s.rawOT; 
         
         let color = (totalSpent >= totalTarget) ? "green" : "red";
         let statusTxt = (totalSpent >= totalTarget) ? "Target Met" : "Deficit";
@@ -391,17 +377,14 @@
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
           <td><b>${formatHours(targetHours)}</b></td>
           <td>${formatHours(row.hours)}</td>
-          <td style="color: #666;">Raw: ${formatHours(row.overtime)}</td>
+          <td style="color: #d35400; font-weight: bold;">${formatHours(row.overtime)}</td>
           <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
         totalSpent += parseFloat(row.hours) || 0;
         totalRawOT += parseFloat(row.overtime) || 0;
       });
 
-      // --- NEW PERIOD OVERTIME OFFSET LOGIC ---
-      let excessHours = Math.max(0, totalSpent - reqHours);
-      let finalPayableOvertime = Math.min(totalRawOT, excessHours);
-
+      // NO DEDUCTIONS LOGIC - using purely totalRawOT
       let color = totalSpent >= reqHours ? "green" : "red";
       
       summaryBox.innerHTML = `
@@ -409,7 +392,7 @@
         <span style="display:inline-block; margin-right:20px;">Work Days: <b>${workingDays}</b></span>
         <span style="display:inline-block; margin-right:20px;">Target Time: <b>${formatHours(reqHours)}</b></span>
         <span style="display:inline-block; margin-right:20px;">Total Spent Time: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
-        <span style="display:inline-block;">Final Payable Overtime: <b style="color: #d35400;">${formatHours(finalPayableOvertime)}</b></span>
+        <span style="display:inline-block;">Total Overtime: <b style="color: #d35400;">${formatHours(totalRawOT)}</b></span>
       `;
     }
 
