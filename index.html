@@ -6,7 +6,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; }
-    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1100px; margin: auto; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
     .login-box { max-width: 300px; margin: auto; text-align: center; padding-top: 50px; }
     input, select, textarea { padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
     .btn { padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -27,15 +27,12 @@
     .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 320px; border-radius: 8px; text-align: center; }
     .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
 
-    /* TOAST NOTIFICATION STYLES */
-    #toast {
-      visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; 
-      border-radius: 5px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px; 
-      transform: translateX(-50%); font-size: 15px; box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
-    }
+    #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 5px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; box-shadow: 0px 4px 6px rgba(0,0,0,0.3); }
     #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
     @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
     @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    .developer-credit { text-align: center; margin-top: 40px; padding: 20px; font-size: 13px; color: #6c757d; border-top: 1px solid #eaeaea; }
 
     @media print {
       body { background-color: white; padding: 0; }
@@ -100,7 +97,7 @@
         <div style="margin-top: 18px;">
           <button class="btn" style="background-color: #007bff;" onclick="fetchReport()">Get Report</button>
           <button class="btn email-btn" id="btnEmail" style="background-color: #17a2b8; margin-left: 5px;" onclick="openEmailModal()">✉️ Email</button>
-          <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️</button>
+          <button class="btn print-btn" style="background-color: #6c757d; margin-left: 5px;" onclick="window.print()">🖨️ Print</button>
         </div>
       </div>
       
@@ -109,7 +106,7 @@
       <table id="summaryTable">
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Dept</th><th>Work Days</th><th>Holidays</th><th>Leaves</th><th>Absents</th><th>Target Hrs</th><th>Time Spent</th><th>Status</th>
+            <th>ID</th><th>Name</th><th>Designation</th><th>Dept</th><th>Work Days</th><th>Holidays</th><th>Absents</th><th>Target Hrs</th><th>Time Spent</th><th>Overtime</th><th>Status</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody"></tbody>
@@ -120,13 +117,17 @@
         <table id="detailedTable">
           <thead>
             <tr>
-              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Target Hrs</th><th>Time Spent</th><th class="action-col no-print">Edit</th>
+              <th>Date</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Target Hrs</th><th>Spent Hrs</th><th>Overtime Hrs</th><th class="action-col no-print">Edit</th>
             </tr>
           </thead>
           <tbody id="detailedTableBody"></tbody>
         </table>
       </div>
     </div>
+  </div>
+
+  <div class="developer-credit no-print">
+    System Developed and Maintained by <strong>Muhammad Shoaib, Lecturer Mathematics</strong>
   </div>
 
   <div id="editModal" class="modal">
@@ -160,7 +161,6 @@
 
     let currentUserRole = ""; let currentUserDept = "";
 
-    // TOAST NOTIFICATION FUNCTION
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
       toast.innerText = msg;
@@ -243,7 +243,7 @@
           } else {
             buildDetailedReport(data.data, data.workingDays, data.requiredHours);
             detailedTableContainer.style.display = "block";
-            document.getElementById("btnEmail").style.display = "inline-block"; // Show email button for individual
+            document.getElementById("btnEmail").style.display = "inline-block";
             showToast("Detailed report loaded.", "success");
           }
         } else { showToast(data.message || "No records found.", "error"); }
@@ -256,9 +256,9 @@
       let summary = {};
 
       records.forEach(row => {
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, dept: row.department, total:0, absents:0, leaves:0, holidays:0 };
-        let hrs = parseFloat(row.hours) || 0;
-        summary[row.empId].total += hrs;
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, overtime:0, absents:0, leaves:0, holidays:0 };
+        summary[row.empId].total += parseFloat(row.hours) || 0;
+        summary[row.empId].overtime += parseFloat(row.overtime) || 0;
         if (row.status === "Absent") summary[row.empId].absents++;
         if (row.status.toLowerCase().includes("leave")) summary[row.empId].leaves++;
         if (row.status === "Holiday") summary[row.empId].holidays++; 
@@ -270,10 +270,11 @@
         let statusTxt = s.total < reqHours ? "Deficit" : "Target Met";
         
         tbody.innerHTML += `<tr>
-          <td>${empId}</td><td style="text-align:left;">${s.name}</td><td>${s.dept}</td>
-          <td>${workingDays}</td><td>${s.holidays}</td><td>${s.leaves}</td><td style="color:red; font-weight:bold;">${s.absents}</td>
+          <td>${empId}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
+          <td>${workingDays}</td><td>${s.holidays}</td><td style="color:red; font-weight:bold;">${s.absents}</td>
           <td><b>${formatHours(reqHours)}</b></td>
           <td style="color: ${color}; font-weight: bold;">${formatHours(s.total)}</td>
+          <td style="color: #d35400; font-weight: bold;">${formatHours(s.overtime)}</td>
           <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
         </tr>`;
       }
@@ -283,8 +284,9 @@
       const tbody = document.getElementById("detailedTableBody");
       const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
-      let total=0, absents=0, leaves=0;
+      let total=0, overtime=0, absents=0;
       let empName = records[0].name;
+      let empDesig = records[0].designation;
 
       records.forEach(row => {
         let inTime = formatTime(row.checkIn);
@@ -295,7 +297,7 @@
         if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; absents++; }
         if(row.status === "Offday") statusColor = "#888";
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
-        if(row.status.toLowerCase().includes("leave")) leaves++;
+        if(row.status === "Present" || row.status === "Target Met") statusColor = "green";
 
         let targetHours = (row.dayType === "Normal") ? 8 : 0;
         let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Edit</button>`;
@@ -307,13 +309,15 @@
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
           <td><b>${formatHours(targetHours)}</b></td>
           <td>${formatHours(row.hours)}</td>
+          <td style="color: #d35400; font-weight: bold;">${formatHours(row.overtime)}</td>
           <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
         total += parseFloat(row.hours) || 0;
+        overtime += parseFloat(row.overtime) || 0;
       });
 
       let color = total < reqHours ? "red" : "green";
-      summaryBox.innerHTML = `Employee: <b>${empName}</b> | Work Days: ${workingDays} | Absents: <span style="color:red">${absents}</span> | Target: ${formatHours(reqHours)} | Spent: <span style="color: ${color};">${formatHours(total)}</span>`;
+      summaryBox.innerHTML = `Employee: <b>${empName}</b> (${empDesig}) | Work Days: ${workingDays} | Target: ${formatHours(reqHours)} | Spent: <span style="color: ${color};">${formatHours(total)}</span> | Overtime: <span style="color: #d35400;">${formatHours(overtime)}</span>`;
     }
 
     function openModal(empId, date, checkIn, checkOut) {
