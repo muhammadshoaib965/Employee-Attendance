@@ -42,16 +42,30 @@
     .summary-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 15px; border-left: 5px solid #0056b3; }
     .print-btn { background-color: #28a745; margin-bottom: 15px; display: none; float: right; margin-left: 10px; }
     .print-btn:hover { background-color: #218838; }
-    .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; }
+    .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; font-size: 22px; font-weight: bold; }
 
+    /* STRICT PRINT CSS TO HIDE THE PORTAL/FRONTEND */
     @media print {
-      body { background-color: white; padding: 0; }
-      .card { box-shadow: none; padding: 0; margin: 0; max-width: 100%; }
-      .no-print, .header-bar, .filters-container, .print-btn, button { display: none !important; }
-      .print-header { display: block; font-size: 20px; font-weight: bold; }
-      th { background-color: #f2f2f2 !important; color: black !important; -webkit-print-color-adjust: exact; }
-      td, th { border: 1px solid #000; padding: 8px; }
-      .summary-box { border: 1px solid #000; }
+      body { background-color: #fff; margin: 0; padding: 0; }
+      
+      /* Force hide EVERYTHING that isn't the report */
+      #loginScreen, .header-bar, #adminControls, .filters-container, 
+      .print-btn, .btn-email, .action-col, .no-print, .toast, #toast, h3.no-print { 
+        display: none !important; 
+      }
+      
+      /* Flatten the card holding the table so it prints cleanly */
+      .card { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+      
+      .print-header { display: block !important; margin-bottom: 20px; color: #000; }
+      
+      /* Style tables to print sharply in black and white */
+      table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      th, td { border: 1px solid #000 !important; padding: 8px !important; color: #000 !important; }
+      th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+      
+      .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 16px !important; background: transparent !important; }
     }
   </style>
 </head>
@@ -149,12 +163,10 @@
             <th>Name</th>
             <th>Designation</th>
             <th>Department</th>
-            <th>Working Days</th>
-            <th>Holidays</th>
-            <th>Absents</th>
+            <th>Work Days</th>
             <th>Target Hrs</th>
             <th>Spent Hrs</th>
-            <th>Overtime</th>
+            <th>Final Overtime</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -172,7 +184,7 @@
               <th>Status</th>
               <th>Target Hrs</th>
               <th>Spent Hrs</th>
-              <th>Overtime</th>
+              <th>Raw Daily OT</th>
               <th class="action-col no-print">Action</th>
             </tr>
           </thead>
@@ -297,7 +309,7 @@
         if(data.success && data.data.length > 0) {
           document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
-          document.getElementById("printHeader").innerText = `Report: ${filterStart} to ${filterEnd}`;
+          document.getElementById("printHeader").innerText = `Official Attendance Report (${filterStart} to ${filterEnd})`;
 
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
@@ -319,30 +331,31 @@
       let summary = {};
 
       records.forEach(row => {
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, overtime:0, absents:0, leaves:0, holidays:0 };
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0 };
         summary[row.empId].total += parseFloat(row.hours) || 0;
-        summary[row.empId].overtime += parseFloat(row.overtime) || 0;
-        if (row.status === "Absent") summary[row.empId].absents++;
-        if (row.status.toLowerCase().includes("leave")) summary[row.empId].leaves++;
-        if (row.status === "Holiday") summary[row.empId].holidays++; 
+        summary[row.empId].rawOT += parseFloat(row.overtime) || 0;
       });
 
       for (let empId in summary) {
         let s = summary[empId];
-        let isTargetMet = s.total >= reqHours;
         
-        // OVERTIME SAFEGUARD: Reset overtime to 0 if total spent hours < required hours for the selected period.
-        if (s.total < reqHours) { s.overtime = 0; }
-
-        let color = isTargetMet ? "green" : "red";
-        let statusTxt = isTargetMet ? "Target Met" : "Deficit";
+        // --- NEW PERIOD OVERTIME OFFSET LOGIC ---
+        let totalSpent = s.total;
+        let totalTarget = reqHours;
+        let rawOvertime = s.rawOT;
+        
+        let excessHours = Math.max(0, totalSpent - totalTarget);
+        let finalOvertime = Math.min(rawOvertime, excessHours);
+        
+        let color = (totalSpent >= totalTarget) ? "green" : "red";
+        let statusTxt = (totalSpent >= totalTarget) ? "Target Met" : "Deficit";
         
         tbody.innerHTML += `<tr>
           <td>${empId}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
-          <td>${workingDays}</td><td>${s.holidays}</td><td style="color:red; font-weight:bold;">${s.absents}</td>
-          <td><b>${formatHours(reqHours)}</b></td>
-          <td style="color: ${color}; font-weight: bold;">${formatHours(s.total)}</td>
-          <td style="color: #d35400; font-weight: bold;">${formatHours(s.overtime)}</td>
+          <td>${workingDays}</td>
+          <td><b>${formatHours(totalTarget)}</b></td>
+          <td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
+          <td style="color: #d35400; font-weight: bold;">${formatHours(finalOvertime)}</td>
           <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
         </tr>`;
       }
@@ -352,7 +365,7 @@
       const tbody = document.getElementById("detailedTableBody");
       const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
-      let total=0, overtime=0, absents=0;
+      let totalSpent=0, totalRawOT=0;
       let empName = records[0].name;
       let empDesig = records[0].designation;
       let empDept = records[0].department; 
@@ -363,7 +376,7 @@
         
         let statusColor = "black";
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "orange";
-        if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "red"; absents++; }
+        if(row.status === "Absent" || row.status.includes("Missing")) statusColor = "red";
         if(row.status === "Offday") statusColor = "#888";
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
         if(row.status === "Present" || row.status === "Target Met") statusColor = "green";
@@ -378,19 +391,26 @@
           <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
           <td><b>${formatHours(targetHours)}</b></td>
           <td>${formatHours(row.hours)}</td>
-          <td style="color: #d35400; font-weight: bold;">${formatHours(row.overtime)}</td>
+          <td style="color: #666;">Raw: ${formatHours(row.overtime)}</td>
           <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
-        total += parseFloat(row.hours) || 0;
-        overtime += parseFloat(row.overtime) || 0;
+        totalSpent += parseFloat(row.hours) || 0;
+        totalRawOT += parseFloat(row.overtime) || 0;
       });
 
-      // OVERTIME SAFEGUARD: Reset summary block overtime to 0 if total spent hours < required hours
-      if (total < reqHours) { overtime = 0; }
+      // --- NEW PERIOD OVERTIME OFFSET LOGIC ---
+      let excessHours = Math.max(0, totalSpent - reqHours);
+      let finalPayableOvertime = Math.min(totalRawOT, excessHours);
 
-      let color = total >= reqHours ? "green" : "red";
+      let color = totalSpent >= reqHours ? "green" : "red";
       
-      summaryBox.innerHTML = `Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b> | Work Days: ${workingDays} | Target: ${formatHours(reqHours)} | Spent: <span style="color: ${color};">${formatHours(total)}</span> | Overtime: <span style="color: #d35400;">${formatHours(overtime)}</span>`;
+      summaryBox.innerHTML = `
+        Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b><br><br>
+        <span style="display:inline-block; margin-right:20px;">Work Days: <b>${workingDays}</b></span>
+        <span style="display:inline-block; margin-right:20px;">Target Time: <b>${formatHours(reqHours)}</b></span>
+        <span style="display:inline-block; margin-right:20px;">Total Spent Time: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
+        <span style="display:inline-block;">Final Payable Overtime: <b style="color: #d35400;">${formatHours(finalPayableOvertime)}</b></span>
+      `;
     }
 
     function openModal(empId, date, checkIn, checkOut) {
