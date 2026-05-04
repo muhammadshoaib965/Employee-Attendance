@@ -45,6 +45,10 @@
     .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; font-size: 22px; font-weight: bold; }
 
     .developer-credit { text-align: center; margin-top: 30px; padding-bottom: 20px; font-size: 12px; color: #888; }
+    
+    .login-links { text-align: center; margin-top: 15px; font-size: 14px; }
+    .login-links a { color: #0056b3; text-decoration: none; margin: 0 10px; }
+    .login-links a:hover { text-decoration: underline; }
 
     @media print {
       body { background-color: #fff; margin: 0; padding: 0; }
@@ -76,6 +80,11 @@
       <input type="password" id="password" placeholder="Enter Password">
     </div>
     <button onclick="login()" style="width: 100%;">Login</button>
+    
+    <div class="login-links">
+      <a href="#" onclick="openPasswordModal(true)">Change Password</a> | 
+      <a href="#" onclick="openForgotModal()">Forgot Password?</a>
+    </div>
   </div>
 
   <div id="dashboard" style="display: none;">
@@ -83,7 +92,7 @@
       <span>FAST-NUCES Multan Campus - Attendance Dashboard</span>
       <div>
         <span id="roleText" style="margin-right: 15px;"></span>
-        <button class="btn-secondary" onclick="openPasswordModal()" style="padding: 5px 10px; font-size: 12px;">Change Password</button>
+        <button class="btn-secondary" onclick="openPasswordModal(false)" style="padding: 5px 10px; font-size: 12px;">Change Password</button>
       </div>
     </div>
 
@@ -227,6 +236,10 @@
     <div class="modal-content">
       <h3>Change Password</h3>
       <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="cpUsername" placeholder="Enter your Username">
+      </div>
+      <div class="input-group">
         <label>Old Password</label>
         <input type="password" id="oldPassword">
       </div>
@@ -241,6 +254,21 @@
       <div style="display: flex; justify-content: space-between; margin-top: 20px;">
         <button class="btn-secondary" onclick="closePasswordModal()">Cancel</button>
         <button onclick="saveNewPassword()">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="forgotModal" class="modal">
+    <div class="modal-content">
+      <h3>Forgot Password</h3>
+      <p style="font-size: 13px; color: #666;">Enter your Username (Emp ID). A temporary password will be sent to your registered email.</p>
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="forgotUsername" placeholder="Enter your Username">
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button class="btn-secondary" onclick="closeForgotModal()">Cancel</button>
+        <button onclick="sendForgotPassword()">Reset Password</button>
       </div>
     </div>
   </div>
@@ -297,31 +325,51 @@
       }).catch(err => { showToast("Connection failed.", "error"); });
     }
 
-    function openPasswordModal() {
+    // Modal Controls
+    function openPasswordModal(fromLogin) {
+      const userField = document.getElementById("cpUsername");
+      userField.value = fromLogin ? "" : currentUsername;
+      userField.disabled = !fromLogin;
       document.getElementById("oldPassword").value = "";
       document.getElementById("newPassword").value = "";
       document.getElementById("confirmPassword").value = "";
       document.getElementById("passwordModal").style.display = "block";
     }
-
     function closePasswordModal() { document.getElementById("passwordModal").style.display = "none"; }
+    
+    function openForgotModal() { document.getElementById("forgotUsername").value = ""; document.getElementById("forgotModal").style.display = "block"; }
+    function closeForgotModal() { document.getElementById("forgotModal").style.display = "none"; }
 
     function saveNewPassword() {
+      const user = document.getElementById("cpUsername").value.trim();
       const oldPass = document.getElementById("oldPassword").value;
       const newPass = document.getElementById("newPassword").value;
       const confPass = document.getElementById("confirmPassword").value;
 
-      if (!oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
+      if (!user || !oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
       if (newPass !== confPass) return showToast("New passwords do not match.", "error");
 
       showToast("Updating password...", "info");
       fetch(SCRIPT_URL, { 
         method: "POST", 
-        body: JSON.stringify({ action: "changePassword", username: currentUsername, oldPassword: oldPass, newPassword: newPass }) 
+        body: JSON.stringify({ action: "changePassword", username: user, oldPassword: oldPass, newPassword: newPass }) 
       })
       .then(res => res.json())
       .then(data => {
         if(data.success) { showToast(data.message, "success"); closePasswordModal(); } 
+        else { showToast(data.message, "error"); }
+      });
+    }
+
+    function sendForgotPassword() {
+      const user = document.getElementById("forgotUsername").value.trim();
+      if (!user) return showToast("Please enter your Username.", "error");
+
+      showToast("Searching system and sending email...", "info");
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "forgotPassword", username: user }) })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) { showToast(data.message, "success"); closeForgotModal(); } 
         else { showToast(data.message, "error"); }
       });
     }
