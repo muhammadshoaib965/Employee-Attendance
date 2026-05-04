@@ -44,7 +44,6 @@
     .print-btn:hover { background-color: #218838; }
     .print-header { display: none; text-align: center; margin-bottom: 20px; color: #333; font-size: 22px; font-weight: bold; }
 
-    /* STRICT PRINT CSS TO HIDE THE PORTAL/FRONTEND */
     @media print {
       body { background-color: #fff; margin: 0; padding: 0; }
       #loginScreen, .header-bar, #adminControls, .filters-container, 
@@ -125,12 +124,7 @@
         </div>
         <div class="input-group">
           <label>Department</label>
-          <select id="filterDept">
-            <option value="All">All Departments</option>
-            <option value="IT">IT</option>
-            <option value="HR">HR</option>
-            <option value="Finance">Finance</option>
-          </select>
+          <select id="filterDept"></select>
         </div>
         <div class="input-group">
           <label>Employee ID (Optional)</label>
@@ -154,6 +148,7 @@
             <th>Designation</th>
             <th>Department</th>
             <th>Work Days</th>
+            <th>Absents</th>
             <th>Target Hrs</th>
             <th>Spent Hrs</th>
             <th>Total Overtime</th>
@@ -253,9 +248,17 @@
           document.getElementById("dashboard").style.display = "block";
           document.getElementById("roleText").innerText = "Role: " + data.role + " | Dept: " + data.department;
           
-          if(data.role === "Admin") { document.getElementById("adminControls").style.display = "flex"; } 
-          else {
-            const deptSelect = document.getElementById("filterDept");
+          const deptSelect = document.getElementById("filterDept");
+          deptSelect.innerHTML = "";
+
+          if(data.role === "Admin") { 
+            document.getElementById("adminControls").style.display = "flex"; 
+            deptSelect.innerHTML = `<option value="All">All Departments</option>`;
+            data.allDepartments.forEach(d => {
+              deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            deptSelect.disabled = false;
+          } else {
             deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
             deptSelect.disabled = true;
           }
@@ -321,9 +324,14 @@
       let summary = {};
 
       records.forEach(row => {
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0 };
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0, absents:0 };
         summary[row.empId].total += parseFloat(row.hours) || 0;
         summary[row.empId].rawOT += parseFloat(row.overtime) || 0;
+        
+        // Count Absents
+        if (row.status.includes("Absent") || row.status.includes("Missing")) {
+          summary[row.empId].absents += 1;
+        }
       });
 
       for (let empId in summary) {
@@ -332,14 +340,15 @@
         let totalTarget = reqHours;
         let finalOvertime = s.rawOT; 
         
-        // NEW LOGIC: Only mark red and "Deficit" if spent time is LESS than 80% of total target
         let threshold = totalTarget * 0.8;
         let color = (totalSpent >= threshold) ? "green" : "red";
         let statusTxt = (totalSpent >= threshold) ? "Target Met" : "Deficit";
+        let absentColor = (s.absents > 0) ? "red" : "black";
         
         tbody.innerHTML += `<tr>
           <td>${empId}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
           <td>${workingDays}</td>
+          <td style="color: ${absentColor}; font-weight: bold;">${s.absents}</td>
           <td><b>${formatHours(totalTarget)}</b></td>
           <td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
           <td style="color: #d35400; font-weight: bold;">${formatHours(finalOvertime)}</td>
@@ -352,7 +361,7 @@
       const tbody = document.getElementById("detailedTableBody");
       const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
-      let totalSpent=0, totalRawOT=0;
+      let totalSpent=0, totalRawOT=0, totalAbsents=0;
       let empName = records[0].name;
       let empDesig = records[0].designation;
       let empDept = records[0].department; 
@@ -363,7 +372,10 @@
         
         let statusColor = "black";
         if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "orange";
-        if(row.status === "Absent" || row.status.includes("Missing")) statusColor = "red";
+        if(row.status === "Absent" || row.status.includes("Missing")) {
+          statusColor = "red";
+          totalAbsents++; // Add to absent count
+        }
         if(row.status === "Offday") statusColor = "#888";
         if(row.status.includes("Holiday")) statusColor = "#17a2b8";
         if(row.status === "Present" || row.status === "Target Met") statusColor = "green";
@@ -385,13 +397,14 @@
         totalRawOT += parseFloat(row.overtime) || 0;
       });
 
-      // NEW LOGIC: Only mark red if total spent is LESS than 80% of target
       let threshold = reqHours * 0.8;
       let color = totalSpent >= threshold ? "green" : "red";
+      let absentColor = totalAbsents > 0 ? "red" : "black";
       
       summaryBox.innerHTML = `
         Employee: <b>${empName}</b> (${empDesig}) | Dept: <b>${empDept}</b><br><br>
         <span style="display:inline-block; margin-right:20px;">Work Days: <b>${workingDays}</b></span>
+        <span style="display:inline-block; margin-right:20px;">Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span>
         <span style="display:inline-block; margin-right:20px;">Target Time: <b>${formatHours(reqHours)}</b></span>
         <span style="display:inline-block; margin-right:20px;">Total Spent Time: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
         <span style="display:inline-block;">Total Overtime: <b style="color: #d35400;">${formatHours(totalRawOT)}</b></span>
