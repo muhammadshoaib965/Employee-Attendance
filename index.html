@@ -8,9 +8,9 @@
   
   <style>
     :root {
-      --primary-blue: #0A3663; /* FAST Official Dark Blue */
+      --primary-blue: #0A3663; /* FAST Dark Blue */
       --secondary-blue: #145A9E;
-      --accent-gold: #F4A81D; /* FAST Official Gold */
+      --accent-gold: #F4A81D; /* FAST Gold */
       --bg-color: #F4F7F6;
       --card-bg: #FFFFFF;
       --text-main: #2C3E50;
@@ -142,15 +142,46 @@
 
     /* Modals */
     .modal { display: none; position: fixed; z-index: 500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px); }
-    .modal-content { background-color: var(--card-bg); margin: 8% auto; padding: 30px; border-radius: 12px; width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideDown 0.3s ease-out; }
-    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-content { background-color: var(--card-bg); margin: 8% auto; padding: 30px; border-radius: 12px; width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideDownModal 0.3s ease-out; }
+    @keyframes slideDownModal { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-content h3 { margin-top: 0; color: var(--primary-blue); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
 
-    /* Toast */
-    .toast { visibility: hidden; min-width: 280px; background-color: #334155; color: #fff; text-align: center; border-radius: 8px; padding: 14px; position: fixed; z-index: 1000; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .toast.show { visibility: visible; animation: fadein 0.4s, fadeout 0.4s 2.6s; }
-    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
-    @keyframes fadeout { from {bottom: 40px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    /* Center-Top Toast / Loading Notification */
+    .toast { 
+      visibility: hidden; 
+      min-width: 280px; 
+      background-color: #334155; 
+      color: #fff; 
+      text-align: center; 
+      border-radius: 8px; 
+      padding: 14px 20px; 
+      position: fixed; 
+      z-index: 1000; 
+      left: 50%; 
+      top: 25px; /* Moved to top */
+      transform: translateX(-50%); 
+      font-size: 15px; 
+      font-weight: 500; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .toast.show { visibility: visible; animation: slideDownToast 0.4s, slideUpToast 0.4s 2.6s; }
+    @keyframes slideDownToast { from {top: -50px; opacity: 0;} to {top: 25px; opacity: 1;} }
+    @keyframes slideUpToast { from {top: 25px; opacity: 1;} to {top: -50px; opacity: 0;} }
+    
+    /* Small spinner for processing state */
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top: 3px solid #fff;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* Print Styles */
     @media print {
@@ -177,7 +208,7 @@
       <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="FAST-NUCES Logo">
     </div>
     <h2 style="text-align: center;">Portal Login</h2>
-    <p class="subtitle">FAST-NUCES Multan Campus Attendance System</p>
+    <p class="subtitle">FAST-NUCES Multan Campus Employee Attendance System</p>
     
     <div class="input-group">
       <label>Username (Emp ID)</label>
@@ -200,7 +231,7 @@
     <div class="header-bar">
       <div class="header-left">
         <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="Logo" class="header-logo">
-        <span>FAST-NUCES Multan - Attendance Dashboard</span>
+        <span>FAST-NUCES Multan - Employee Attendance Portal</span>
       </div>
       <div class="header-controls">
         <span id="roleText"></span>
@@ -243,7 +274,7 @@
     </div>
 
     <div class="card">
-      <h3 class="no-print" style="margin-bottom: 20px;">Report Generation Engine</h3>
+      <h3 class="no-print" style="margin-bottom: 20px;">Employee Attendance Sheet Generator</h3>
       
       <div class="filters-container">
         <div class="input-group">
@@ -310,7 +341,7 @@
       </div>
     </div>
     
-    <div class="developer-credit">Powered by <b>FAST-NUCES IT</b> | Developed by Muhammad Shoaib</div>
+    <div class="developer-credit">Developed by Muhammad Shoaib</div>
   </div>
 
   <div id="editModal" class="modal">
@@ -336,7 +367,7 @@
 
   <div id="emailModal" class="modal">
     <div class="modal-content">
-      <h3>Send Official Report</h3>
+      <h3>Send Employee Attendance Report</h3>
       <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">This will automatically format and email the detailed breakdown to the employee's registered email address.</p>
       <div class="input-group">
         <label>Add Custom Note (Optional)</label>
@@ -398,11 +429,26 @@
 
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
-      toast.innerText = msg;
-      if(type === "error") toast.style.backgroundColor = "#EF4444";
-      else if(type === "info") toast.style.backgroundColor = "#0284C7";
-      else toast.style.backgroundColor = "#10B981";
+      
+      // Clear previous styles/content
+      toast.innerHTML = "";
+      
+      // Determine style and icon based on type
+      if(type === "error") {
+        toast.style.backgroundColor = "#EF4444";
+        toast.innerHTML = `<span>❌</span> <span>${msg}</span>`;
+      } else if(type === "info") {
+        toast.style.backgroundColor = "#0284C7";
+        // Adds a visual spinning loader for processing states
+        toast.innerHTML = `<div class="spinner"></div> <span>${msg}</span>`;
+      } else {
+        toast.style.backgroundColor = "#10B981";
+        toast.innerHTML = `<span>✅</span> <span>${msg}</span>`;
+      }
+      
       toast.className = "show";
+      
+      // Auto-hide after 3 seconds
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
     }
 
@@ -443,23 +489,18 @@
       }).catch(err => { showToast("Connection failed.", "error"); });
     }
 
-    // --- NEW LOGOUT FUNCTION ---
     function logout() {
-      // Clear variables
       currentUsername = "";
       currentUserRole = "";
       currentUserDept = "";
       
-      // Clear inputs
       document.getElementById("username").value = "";
       document.getElementById("password").value = "";
       
-      // Hide dashboard & show login
       document.getElementById("dashboard").style.display = "none";
       document.getElementById("loginScreen").style.display = "block";
       document.getElementById("adminControls").style.display = "none";
       
-      // Clear tables
       document.getElementById("summaryTable").style.display = "none";
       document.getElementById("detailedTableContainer").style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
@@ -541,7 +582,7 @@
       
       if(!filterStart || !filterEnd) { return showToast("Please define a reporting period.", "error"); }
 
-      showToast("Querying database...", "info");
+      showToast("Searching database...", "info");
       summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
       document.querySelector('.print-btn').style.display = "none";
       document.getElementById("btnEmail").style.display = "none";
@@ -554,7 +595,7 @@
         if(data.success && data.data.length > 0) {
           document.querySelector('.print-btn').style.display = "inline-block";
           document.getElementById("printHeader").style.display = "block";
-          document.getElementById("printHeader").innerHTML = `FAST-NUCES Multan Campus<br>Official Attendance Report<br><span style="font-size:16px; font-weight:normal;">(${filterStart} to ${filterEnd})</span>`;
+          document.getElementById("printHeader").innerHTML = `FAST-NUCES Multan Campus<br>Employee Attendance Sheet<br><span style="font-size:16px; font-weight:normal;">(${filterStart} to ${filterEnd})</span>`;
 
           if (filterEmpId === "") {
             buildSummaryReport(data.data, data.workingDays, data.requiredHours);
@@ -726,7 +767,7 @@
     function processExcel() {
       const fileInput = document.getElementById("excelFile");
       if (!fileInput.files.length) { return showToast("No file detected for parsing.", "error"); }
-      showToast("Parsing local file buffers...", "info");
+      showToast("Loading and Parsing data...", "info");
       
       const reader = new FileReader();
       reader.onload = function(e) {
