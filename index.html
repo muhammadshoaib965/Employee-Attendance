@@ -1,680 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base target="_top">
-  <title>FAST-NUCES Multan - Portal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAST-NUCES Attendance Portal</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
   <style>
-    :root {
-      --primary-blue: #0A3663; 
-      --secondary-blue: #145A9E;
-      --accent-gold: #F4A81D; 
-      --bg-color: #F4F7F6;
-      --card-bg: #FFFFFF;
-      --text-main: #2C3E50;
-      --text-muted: #6C7A89;
-      --border-color: #E2E8F0;
-      --success: #10B981;
-      --danger: #EF4444;
-      --warning: #F59E0B;
-    }
-
-    body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); margin: 0; padding: 30px 20px; color: var(--text-main); }
-    h2, h3 { color: var(--primary-blue); font-weight: 600; }
-    .logo-container { text-align: center; margin-bottom: 20px; }
-    .logo-container img { max-width: 130px; height: auto; }
-
-    .card { background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); max-width: 1050px; margin: 0 auto 25px; border: 1px solid rgba(0,0,0,0.03); }
-    .login-card { max-width: 420px; margin-top: 60px; }
-    .login-card h2 { margin-bottom: 5px; font-size: 22px; }
-    .login-card p.subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px; margin-top: 0; }
-
-    .input-group { margin-bottom: 18px; text-align: left; }
-    .input-group label { display: block; font-weight: 500; margin-bottom: 6px; color: var(--text-main); font-size: 13px; }
-    .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.3s ease; background-color: #FAFAFA; }
-    .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: var(--secondary-blue); outline: none; box-shadow: 0 0 0 3px rgba(20, 90, 158, 0.15); background-color: #FFF; }
-
-    button { background-color: var(--primary-blue); color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s ease; font-family: 'Inter', sans-serif; }
-    button:hover { background-color: var(--secondary-blue); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(20, 90, 158, 0.2); }
-    button:active { transform: translateY(0); }
-    .btn-secondary { background-color: #64748B; }
-    .btn-secondary:hover { background-color: #475569; box-shadow: 0 4px 10px rgba(100, 116, 139, 0.2); }
-    .btn-danger { background-color: var(--danger); }
-    .btn-danger:hover { background-color: #DC2626; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
-    .btn-edit { background-color: var(--accent-gold); color: #000; padding: 6px 12px; font-size: 12px; font-weight: 600; }
-    .btn-edit:hover { background-color: #E09612; }
-    .btn-email { background-color: #0284C7; float: right; }
-    .btn-email:hover { background-color: #0369A1; }
-
-    .header-bar { display: flex; justify-content: space-between; align-items: center; background: var(--primary-blue); color: white; padding: 15px 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 6px 15px rgba(10, 54, 99, 0.15); }
-    .header-left { display: flex; align-items: center; gap: 15px; }
-    .header-logo { height: 45px; background: white; padding: 4px; border-radius: 6px; }
-    .header-bar span { font-weight: 600; font-size: 17px; letter-spacing: 0.5px; }
-    .header-controls { display: flex; align-items: center; gap: 15px; font-size: 13px; font-weight: 500; }
-
-    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; font-size: 14px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-    th, td { border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); padding: 14px 12px; text-align: center; }
-    th:last-child, td:last-child { border-right: none; }
-    tr:last-child td { border-bottom: none; }
-    th { background-color: #F8FAFC; color: var(--text-main); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
-    tr:hover td { background-color: #F1F5F9; transition: background-color 0.2s ease; }
-    
-    .filters-container { display: flex; gap: 15px; flex-wrap: wrap; background: #F8FAFC; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-    .filters-container .input-group { margin-bottom: 0; flex: 1; min-width: 160px; }
-    
-    .summary-box { background: #F8FAFC; padding: 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border-left: 5px solid var(--primary-blue); display: flex; flex-wrap: wrap; gap: 20px; }
-    .summary-box span { background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-    .print-btn { background-color: var(--success); margin-bottom: 15px; display: none; float: right; margin-left: 10px; }
-    .print-btn:hover { background-color: #059669; }
-    .print-header { display: none; text-align: center; margin-bottom: 20px; color: var(--text-main); font-size: 22px; font-weight: bold; }
-
-    .developer-credit { text-align: center; margin-top: 40px; padding-bottom: 20px; font-size: 12px; color: var(--text-muted); letter-spacing: 0.5px; }
-    
-    .login-links { text-align: center; margin-top: 20px; font-size: 13px; font-weight: 500; }
-    .login-links a { color: var(--secondary-blue); text-decoration: none; margin: 0 10px; transition: color 0.2s; }
-    .login-links a:hover { color: var(--primary-blue); text-decoration: underline; }
-
-    .modal { display: none; position: fixed; z-index: 500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px); }
-    .modal-content { background-color: var(--card-bg); margin: 8% auto; padding: 30px; border-radius: 12px; width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideDownModal 0.3s ease-out; }
-    @keyframes slideDownModal { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-content h3 { margin-top: 0; color: var(--primary-blue); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
-
-    .toast { visibility: hidden; min-width: 280px; background-color: #334155; color: #fff; text-align: center; border-radius: 8px; padding: 14px 20px; position: fixed; z-index: 1000; left: 50%; top: -100px; opacity: 0; transform: translateX(-50%); font-size: 15px; font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 10px; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease, visibility 0.4s; }
-    .toast.show { visibility: visible; top: 25px; opacity: 1; }
-    .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 16px; height: 16px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    @media print {
-      body { background-color: #fff; margin: 0; padding: 0; }
-      #loginScreen, .header-bar, #adminControls, .filters-container, .print-btn, .btn-email, .action-col, .no-print, .toast, #toast, h3.no-print { display: none !important; }
-      .card { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
-      .print-header { display: block !important; margin-bottom: 20px; color: #000; }
-      table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; }
-      th, td { border: 1px solid #000 !important; padding: 8px !important; color: #000 !important; }
-      th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
-      .summary-box { border: 2px solid #000 !important; padding: 15px !important; margin-bottom: 20px !important; color: #000 !important; font-size: 14px !important; background: transparent !important; box-shadow: none !important; }
-      .summary-box span { border: none !important; padding: 0 !important; margin-right: 15px; }
-      .developer-credit { display: block; margin-top: 40px; color: #000; }
-    }
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .brand-bg { background-color: #0056b3; color: white; }
+    .brand-text { color: #0056b3; }
+    #app-loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; text-align: center; padding-top: 20%; }
+    .sidebar { min-height: 100vh; background: #343a40; color: #fff; padding-top: 20px; }
+    .nav-link { color: #adb5bd; cursor: pointer; margin-bottom: 5px; border-radius: 4px; }
+    .nav-link:hover, .nav-link.active { background: #0056b3; color: #fff; }
+    .view-section { display: none; padding: 20px; }
+    .view-section.active { display: block; }
+    .status-absent { color: #dc3545; font-weight: bold; }
+    .status-late { color: #fd7e14; font-weight: bold; }
+    .status-present { color: #28a745; font-weight: bold; }
+    .status-holiday { color: #6c757d; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <div id="toast" class="toast">Message here</div>
-
-  <div id="loginScreen" class="card login-card">
-    <div class="logo-container">
-      <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="FAST-NUCES Logo">
+  <div id="app-loader">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
-    <h2 style="text-align: center;">Portal Login</h2>
-    <p class="subtitle">FAST-NUCES Multan Campus Employee Attendance System</p>
-    
-    <div class="input-group">
-      <label>Username (Emp ID)</label>
-      <input type="text" id="username" placeholder="Enter your username">
-    </div>
-    <div class="input-group">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="Enter your password">
-    </div>
-    <button onclick="login()" style="width: 100%; margin-top: 10px; padding: 14px; font-size: 15px;">Secure Login</button>
-    
-    <div class="login-links">
-      <a href="#" onclick="openPasswordModal(true)">Change Password</a> | 
-      <a href="#" onclick="openForgotModal()">Forgot Password?</a>
-    </div>
+    <h5 class="mt-3 brand-text" id="loader-msg">Processing...</h5>
   </div>
 
-  <div id="dashboard" style="display: none;">
-    <div class="header-bar">
-      <div class="header-left">
-        <img src="https://upload.wikimedia.org/wikipedia/en/e/e4/National_University_of_Computer_and_Emerging_Sciences_logo.png" alt="Logo" class="header-logo">
-        <span>FAST-NUCES Multan - Employee Attendance Portal</span>
-      </div>
-      <div class="header-controls">
-        <span id="roleText"></span>
-        <button class="btn-secondary" onclick="openPasswordModal(false)" style="padding: 8px 12px; font-size: 12px;">Change Password</button>
-        <button class="btn-danger" onclick="logout()" style="padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 5px;">Logout</button>
-      </div>
-    </div>
-
-    <div id="adminControls" class="card" style="display: none; flex-wrap: wrap; gap: 30px;">
-      <div style="flex: 1; min-width: 250px;">
-        <h3>Upload Machine Data</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Select the machine Excel export to process daily logs.</p>
-        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px; width: 100%; padding: 10px; border: 1px dashed var(--secondary-blue); border-radius: 8px; background: #F8FAFC;">
-        <button onclick="processExcel()">Process Attendance Data</button>
-      </div>
-      
-      <div style="flex: 1; min-width: 250px; border-left: 1px solid var(--border-color); padding-left: 30px;">
-        <h3>System Calendar Settings</h3>
-        <div style="display: flex; gap: 15px;">
-          <div class="input-group" style="flex: 1;">
-            <label>Date</label>
-            <input type="date" id="settingDate">
+  <div id="login-screen" class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card shadow-lg" style="width: 400px; border-top: 4px solid #0056b3;">
+      <div class="card-body p-4">
+        <h4 class="text-center brand-text mb-4">FAST-NUCES Portal</h4>
+        <form id="login-form">
+          <div class="mb-3">
+            <label class="form-label">Username (Emp ID)</label>
+            <input type="text" id="login-user" class="form-control" required>
           </div>
-          <div class="input-group" style="flex: 1;">
-            <label>Type</label>
-            <select id="settingType" onchange="toggleCustomHours()">
-              <option value="Holiday">Holiday</option>
-              <option value="Working Weekend">Working Weekend</option>
-              <option value="Custom">Custom Hours (Short Day)</option>
-            </select>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-pass" class="form-control" required>
           </div>
-        </div>
-        <div class="input-group" id="customHoursGroup" style="display: none;">
-          <label>Target Hours (e.g. 5.5 for half day)</label>
-          <input type="number" id="settingCustomHours" step="0.5" placeholder="Enter target hours">
-        </div>
-        <div class="input-group">
-          <label>Description / Occasion</label>
-          <input type="text" id="settingDesc" placeholder="e.g., Eid al-Fitr or Short Day">
-        </div>
-        <button class="btn-secondary" onclick="saveSetting()">Save to Calendar</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 class="no-print" style="margin-bottom: 20px;">Employee Attendance Sheet Generator</h3>
-      
-      <div class="filters-container">
-        <div class="input-group">
-          <label>Start Date</label>
-          <input type="date" id="filterStart">
-        </div>
-        <div class="input-group">
-          <label>End Date</label>
-          <input type="date" id="filterEnd">
-        </div>
-        <div class="input-group">
-          <label>Department</label>
-          <select id="filterDept"></select>
-        </div>
-        <div class="input-group">
-          <label>Employee ID (Optional)</label>
-          <input type="text" id="filterEmpId" placeholder="Leave empty for all">
-        </div>
-        <div style="display: flex; align-items: flex-end;">
-          <button onclick="fetchReport()" style="height: 44px; padding: 0 25px;">Generate</button>
-        </div>
-      </div>
-
-      <div id="printHeader" class="print-header"></div>
-      
-      <button class="print-btn" onclick="window.print()">Print Document</button>
-      <button id="btnEmail" class="btn-email print-btn" onclick="openEmailModal()" style="display:none;">Email to Employee</button>
-
-      <table id="summaryTable" style="display: none;">
-        <thead>
-          <tr>
-            <th>Emp ID</th>
-            <th>Name</th>
-            <th>Designation</th>
-            <th>Department</th>
-            <th>Work Days</th>
-            <th>Absents</th>
-            <th>Target Hrs</th>
-            <th>Spent Hrs</th>
-            <th>Total Overtime</th>
-            <th>Attendance %</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="summaryTableBody"></tbody>
-      </table>
-
-      <div id="detailedTableContainer" style="display: none;">
-        <div id="empSummaryBox" class="summary-box"></div>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Check-In</th>
-              <th>Check-Out</th>
-              <th>Status</th>
-              <th>Target Hrs</th>
-              <th>Spent Hrs</th>
-              <th>Daily OT</th>
-              <th class="action-col no-print">Manage</th>
-            </tr>
-          </thead>
-          <tbody id="detailedTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div class="developer-credit">Developed by Muhammad Shoaib</div>
-  </div>
-
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <h3>Edit Punch Record</h3>
-      <p id="editDateDisplay" style="color: var(--text-muted); font-size: 13px; margin-top: -15px; margin-bottom: 20px;"></p>
-      <input type="hidden" id="editEmpId">
-      <input type="hidden" id="editDate">
-      <div class="input-group">
-        <label>Check-In Time</label>
-        <input type="time" id="editCheckIn">
-      </div>
-      <div class="input-group">
-        <label>Check-Out Time</label>
-        <input type="time" id="editCheckOut">
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-        <button onclick="saveEdit()">Commit Changes</button>
+          <button type="submit" class="btn btn-primary w-100 brand-bg mb-3">Login</button>
+          <div class="text-center">
+            <a href="#" onclick="forgotPassword()" style="font-size: 14px; color: #6c757d;">Forgot Password?</a>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <div id="emailModal" class="modal">
-    <div class="modal-content">
-      <h3>Send Employee Attendance Report</h3>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">This will automatically format and email the detailed breakdown to the employee's registered email address.</p>
-      <div class="input-group">
-        <label>Add Custom Note (Optional)</label>
-        <textarea id="emailMessage" rows="4" placeholder="e.g., Please review your absents for this month..."></textarea>
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-        <button class="btn-secondary" onclick="closeEmailModal()">Cancel</button>
-        <button class="btn-email" onclick="sendEmailReport()" style="float:none;">Dispatch Email</button>
-      </div>
-    </div>
-  </div>
+  <div id="main-app" style="display: none;">
+    <div class="container-fluid p-0">
+      <div class="row g-0">
+        <div class="col-md-2 sidebar px-3">
+          <h5 class="text-center mb-4 text-white">Portal Menu</h5>
+          <ul class="nav flex-column" id="nav-menu">
+            </ul>
+        </div>
+        
+        <div class="col-md-10">
+          <div class="d-flex justify-content-between align-items-center bg-white p-3 shadow-sm mb-4">
+            <h5 class="mb-0 brand-text" id="user-greeting">Welcome!</h5>
+            <div>
+              <span id="user-role-badge" class="badge bg-secondary me-3">Role</span>
+              <button class="btn btn-sm btn-outline-danger" onclick="logout()">Logout</button>
+            </div>
+          </div>
 
-  <div id="passwordModal" class="modal">
-    <div class="modal-content">
-      <h3>Change Password</h3>
-      <div class="input-group">
-        <label>Username</label>
-        <input type="text" id="cpUsername" placeholder="Enter your Username">
-      </div>
-      <div class="input-group">
-        <label>Old Password</label>
-        <input type="password" id="oldPassword">
-      </div>
-      <div class="input-group">
-        <label>New Password</label>
-        <input type="password" id="newPassword">
-      </div>
-      <div class="input-group">
-        <label>Confirm New Password</label>
-        <input type="password" id="confirmPassword">
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-        <button class="btn-secondary" onclick="closePasswordModal()">Cancel</button>
-        <button onclick="saveNewPassword()">Update Password</button>
-      </div>
-    </div>
-  </div>
+          <div id="view-upload" class="view-section">
+            <div class="card shadow-sm">
+              <div class="card-header brand-bg"><h5>Upload Attendance Data (Excel/CSV)</h5></div>
+              <div class="card-body">
+                <input type="file" id="file-upload" class="form-control mb-3" accept=".csv, .xlsx, .xls">
+                <button class="btn btn-success" onclick="processUpload()">Process & Upload to Database</button>
+              </div>
+            </div>
+          </div>
 
-  <div id="forgotModal" class="modal">
-    <div class="modal-content">
-      <h3>Forgot Password</h3>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Enter your administrative Username. A secure temporary password will be sent to your registered email.</p>
-      <div class="input-group">
-        <label>Username</label>
-        <input type="text" id="forgotUsername" placeholder="Enter your Username">
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-        <button class="btn-secondary" onclick="closeForgotModal()">Cancel</button>
-        <button onclick="sendForgotPassword()">Reset Password</button>
+          <div id="view-reports" class="view-section">
+            <div class="card shadow-sm">
+              <div class="card-header brand-bg d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white">Attendance Reports</h5>
+              </div>
+              <div class="card-body">
+                <div class="row g-2 mb-3">
+                  <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type="date" id="filter-start" class="form-control">
+                  </div>
+                  <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type="date" id="filter-end" class="form-control">
+                  </div>
+                  <div class="col-md-2 admin-filter">
+                    <label>Department</label>
+                    <select id="filter-dept" class="form-control">
+                      <option value="All">All Departments</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 admin-filter">
+                    <label>Employee ID</label>
+                    <input type="text" id="filter-empId" class="form-control" placeholder="Optional">
+                  </div>
+                  <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="generateReport()">Search</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                  <table class="table table-bordered table-hover mt-3 text-center align-middle">
+                    <thead class="table-light sticky-top">
+                      <tr>
+                        <th>Emp ID</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                        <th>Target (Hrs)</th>
+                        <th>Spent (Hrs)</th>
+                        <th>Overtime (Hrs)</th>
+                        <th class="admin-filter">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="report-body">
+                      <tr><td colspan="10" class="text-muted">Use filters to generate a report.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="view-settings" class="view-section">
+            <div class="card shadow-sm" style="max-width: 600px; margin: 0 auto;">
+              <div class="card-header bg-dark text-white"><h5>Calendar Overrides</h5></div>
+              <div class="card-body">
+                <p class="text-muted small">Set custom rules for specific dates (e.g., Short Days, Holidays, Working Weekends).</p>
+                <form id="settings-form" onsubmit="saveSetting(event)">
+                  <div class="mb-3">
+                    <label class="form-label">Select Date</label>
+                    <input type="date" id="set-date" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Day Type</label>
+                    <select id="set-type" class="form-control" onchange="toggleTargetHours()" required>
+                      <option value="Holiday">Holiday (Off)</option>
+                      <option value="Working Weekend">Working Weekend (8h)</option>
+                      <option value="Custom">Custom Hours (Short Day)</option>
+                    </select>
+                  </div>
+                  <div class="mb-3" id="target-hours-div" style="display: none;">
+                    <label class="form-label">Target Required Hours</label>
+                    <input type="number" id="set-target-hours" class="form-control" placeholder="e.g., 6" step="0.5" min="0" max="24">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description (Optional)</label>
+                    <input type="text" id="set-desc" class="form-control" placeholder="e.g., Eid-ul-Fitr, Ramadan Timing...">
+                  </div>
+                  <button type="submit" class="btn btn-success w-100">Save Calendar Rule</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // 🚨 PASTE YOUR LATEST WEB APP URL HERE
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec"; 
 
-    let currentUserRole = ""; let currentUserDept = ""; let currentUsername = "";
-    let toastTimeout;
+    // Global State
+    let currentUser = {
+      username: "", role: "", department: "", allDepartments: []
+    };
 
-    // Toggle custom hours input visibility
-    function toggleCustomHours() {
-      const type = document.getElementById("settingType").value;
-      const customGroup = document.getElementById("customHoursGroup");
-      if (type === "Custom") {
-        customGroup.style.display = "block";
-      } else {
-        customGroup.style.display = "none";
-        document.getElementById("settingCustomHours").value = "";
+    // ==========================================
+    // UI HELPERS
+    // ==========================================
+    function showLoader(msg = "Processing...") {
+      document.getElementById("loader-msg").innerText = msg;
+      document.getElementById("app-loader").style.display = "block";
+    }
+
+    function hideLoader() {
+      document.getElementById("app-loader").style.display = "none";
+    }
+
+    async function apiCall(payload) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        return await response.json();
+      } catch (err) {
+        return { success: false, message: "Network Error: " + err.message };
       }
     }
 
-    function showToast(msg, type = "success") {
-      const toast = document.getElementById("toast");
-      if (toastTimeout) clearTimeout(toastTimeout);
-      
-      if(type === "error") {
-        toast.style.backgroundColor = "#EF4444"; toast.innerHTML = `<span>❌</span> <span>${msg}</span>`;
-      } else if(type === "info") {
-        toast.style.backgroundColor = "#0284C7"; toast.innerHTML = `<div class="spinner"></div> <span>${msg}</span>`;
-      } else {
-        toast.style.backgroundColor = "#10B981"; toast.innerHTML = `<span>✅</span> <span>${msg}</span>`;
-      }
-      
-      toast.className = "toast show";
-      if (type !== "info") toastTimeout = setTimeout(() => { toast.className = "toast"; }, 3500);
-    }
+    // ==========================================
+    // AUTHENTICATION
+    // ==========================================
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const u = document.getElementById("login-user").value.trim();
+      const p = document.getElementById("login-pass").value;
+      if (!u || !p) return alert("Please enter credentials.");
 
-    function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
-      if(!user || !pass) return showToast("Fill in all fields.", "error");
+      showLoader("Authenticating...");
+      const res = await apiCall({ action: "login", username: u, password: p });
+      hideLoader();
+
+      if (res.success) {
+        currentUser.username = u;
+        currentUser.role = res.role;
+        currentUser.department = res.department;
+        currentUser.allDepartments = res.allDepartments || [];
+        setupDashboard();
+      } else {
+        alert(res.message || "Login failed.");
+      }
+    });
+
+    async function forgotPassword() {
+      const u = document.getElementById("login-user").value.trim();
+      if (!u) return alert("Please enter your Username (Emp ID) first.");
+      if (!confirm("Send a temporary password to your registered email?")) return;
       
-      showToast("Authenticating connection...", "info");
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", username: user, password: pass }) })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          showToast("Access Granted.", "success");
-          currentUsername = user; currentUserRole = data.role; currentUserDept = data.department;
-          document.getElementById("loginScreen").style.display = "none";
-          document.getElementById("dashboard").style.display = "block";
-          document.getElementById("roleText").innerHTML = `<b>${data.role}</b> | Dept: ${data.department}`;
-          
-          const deptSelect = document.getElementById("filterDept");
-          deptSelect.innerHTML = "";
-          if(data.role === "Admin") { 
-            document.getElementById("adminControls").style.display = "flex"; 
-            deptSelect.innerHTML = `<option value="All">All Departments</option>`;
-            data.allDepartments.forEach(d => { deptSelect.innerHTML += `<option value="${d}">${d}</option>`; });
-            deptSelect.disabled = false;
-          } else {
-            deptSelect.innerHTML = `<option value="${data.department}">${data.department}</option>`;
-            deptSelect.disabled = true;
-          }
-        } else showToast(data.message, "error");
-      }).catch(() => showToast("Connection failed.", "error"));
+      showLoader("Sending Email...");
+      const res = await apiCall({ action: "forgotPassword", username: u });
+      hideLoader();
+      alert(res.message);
     }
 
     function logout() {
-      currentUsername = ""; currentUserRole = ""; currentUserDept = "";
-      document.getElementById("username").value = ""; document.getElementById("password").value = "";
-      document.getElementById("dashboard").style.display = "none";
-      document.getElementById("loginScreen").style.display = "block";
-      document.getElementById("adminControls").style.display = "none";
-      document.getElementById("summaryTable").style.display = "none";
-      document.getElementById("detailedTableContainer").style.display = "none";
-      document.querySelector('.print-btn').style.display = "none";
-      document.getElementById("btnEmail").style.display = "none";
-      document.getElementById("printHeader").style.display = "none";
-      showToast("Logged out successfully.", "success");
+      currentUser = { username: "", role: "", department: "", allDepartments: [] };
+      document.getElementById("main-app").style.display = "none";
+      document.getElementById("login-screen").style.display = "flex";
+      document.getElementById("login-form").reset();
     }
 
-    function openPasswordModal(fromLogin) {
-      const userField = document.getElementById("cpUsername");
-      userField.value = fromLogin ? "" : currentUsername; userField.disabled = !fromLogin;
-      document.getElementById("oldPassword").value = ""; document.getElementById("newPassword").value = ""; document.getElementById("confirmPassword").value = "";
-      document.getElementById("passwordModal").style.display = "block";
-    }
-    function closePasswordModal() { document.getElementById("passwordModal").style.display = "none"; }
-    function openForgotModal() { document.getElementById("forgotUsername").value = ""; document.getElementById("forgotModal").style.display = "block"; }
-    function closeForgotModal() { document.getElementById("forgotModal").style.display = "none"; }
+    // ==========================================
+    // DASHBOARD SETUP
+    // ==========================================
+    function setupDashboard() {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("main-app").style.display = "block";
+      document.getElementById("user-greeting").innerText = `Welcome, ${currentUser.username}!`;
+      document.getElementById("user-role-badge").innerText = `${currentUser.role} | ${currentUser.department}`;
 
-    function saveNewPassword() {
-      const user = document.getElementById("cpUsername").value.trim(); const oldPass = document.getElementById("oldPassword").value; const newPass = document.getElementById("newPassword").value; const confPass = document.getElementById("confirmPassword").value;
-      if (!user || !oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
-      if (newPass !== confPass) return showToast("New passwords do not match.", "error");
-
-      showToast("Updating security credentials...", "info");
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "changePassword", username: user, oldPassword: oldPass, newPassword: newPass }) })
-      .then(res => res.json())
-      .then(data => { if(data.success) { showToast(data.message, "success"); closePasswordModal(); } else showToast(data.message, "error"); });
-    }
-
-    function sendForgotPassword() {
-      const user = document.getElementById("forgotUsername").value.trim();
-      if (!user) return showToast("Please enter your Username.", "error");
-      showToast("Initiating password reset protocol...", "info");
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "forgotPassword", username: user }) })
-      .then(res => res.json())
-      .then(data => { if(data.success) { showToast(data.message, "success"); closeForgotModal(); } else showToast(data.message, "error"); });
-    }
-
-    function formatTime(timeStr) {
-      if (!timeStr || timeStr === "Missing" || timeStr === "-") return timeStr;
-      if (timeStr.toString().includes("1899")) { return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}); }
-      return timeStr;
-    }
-
-    function formatHours(decimalHrs) {
-      let d = parseFloat(decimalHrs) || 0;
-      if (d <= 0) return "0h 0m";
-      let h = Math.floor(d); let m = Math.round((d - h) * 60);
-      return `${h}h ${m}m`;
-    }
-
-    function fetchReport() {
-      const summaryTable = document.getElementById("summaryTable");
-      const detailedTableContainer = document.getElementById("detailedTableContainer");
-      const filterStart = document.getElementById("filterStart").value;
-      const filterEnd = document.getElementById("filterEnd").value;
-      const filterEmpId = document.getElementById("filterEmpId").value.trim();
+      const isAdmin = currentUser.role === "Admin";
       
-      if(!filterStart || !filterEnd) return showToast("Please define a reporting period.", "error");
+      // Setup Sidebar Links
+      const navMenu = document.getElementById("nav-menu");
+      navMenu.innerHTML = "";
+      
+      if (isAdmin) {
+        navMenu.innerHTML += `<li class="nav-item"><a class="nav-link active" onclick="switchView('view-reports', this)">Reports</a></li>`;
+        navMenu.innerHTML += `<li class="nav-item"><a class="nav-link" onclick="switchView('view-upload', this)">Upload Data</a></li>`;
+        navMenu.innerHTML += `<li class="nav-item"><a class="nav-link" onclick="switchView('view-settings', this)">Calendar Rules</a></li>`;
+        
+        // Populate Departments Dropdown
+        const deptSelect = document.getElementById("filter-dept");
+        deptSelect.innerHTML = `<option value="All">All Departments</option>`;
+        currentUser.allDepartments.forEach(d => {
+          deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
+        });
 
-      showToast("Searching database...", "info");
-      summaryTable.style.display = "none"; detailedTableContainer.style.display = "none";
-      document.querySelector('.print-btn').style.display = "none"; document.getElementById("btnEmail").style.display = "none";
+        // Show Admin Filters
+        document.querySelectorAll(".admin-filter").forEach(el => el.style.display = "block");
+      } else {
+        navMenu.innerHTML += `<li class="nav-item"><a class="nav-link active" onclick="switchView('view-reports', this)">My Attendance</a></li>`;
+        // Hide Admin Filters for regular employees
+        document.querySelectorAll(".admin-filter").forEach(el => el.style.display = "none");
+        document.getElementById("filter-empId").value = currentUser.username; // Lock query to themselves
+      }
 
-      const payload = { action: "getReport", role: currentUserRole, department: currentUserDept, filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId } };
+      // Default dates to current month
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      document.getElementById("filter-start").valueAsDate = firstDay;
+      document.getElementById("filter-end").valueAsDate = today;
 
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-      .then(res => res.json())
-      .then(data => {
-        if(data.success && data.data.length > 0) {
-          document.querySelector('.print-btn').style.display = "inline-block";
-          document.getElementById("printHeader").style.display = "block";
-          document.getElementById("printHeader").innerHTML = `FAST-NUCES Multan Campus<br>Employee Attendance Sheet<br><span style="font-size:16px; font-weight:normal;">(${filterStart} to ${filterEnd})</span>`;
-
-          if (filterEmpId === "") {
-            buildSummaryReport(data.data, data.workingDays, data.requiredHours);
-            summaryTable.style.display = "table";
-            showToast("Summary generated successfully.", "success");
-          } else {
-            buildDetailedReport(data.data, data.workingDays, data.requiredHours);
-            detailedTableContainer.style.display = "block";
-            document.getElementById("btnEmail").style.display = "inline-block";
-            showToast("Detailed records loaded.", "success");
-          }
-        } else { showToast(data.message || "No records match the criteria.", "error"); }
-      });
+      switchView('view-reports', navMenu.querySelector('.nav-link'));
     }
 
-    function buildSummaryReport(records, workingDays, reqHours) {
-      const tbody = document.getElementById("summaryTableBody");
-      tbody.innerHTML = "";
-      let summary = {};
-
-      records.forEach(row => {
-        let isHolidayOrOff = row.status.includes("Holiday") || row.status.includes("Offday") || row.dayType === "Holiday";
-        let validHrsToAdd = isHolidayOrOff ? 0 : (parseFloat(row.hours) || 0);
-        let validOTToAdd = isHolidayOrOff ? 0 : (parseFloat(row.overtime) || 0);
-
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0, absents:0 };
-        
-        summary[row.empId].total += validHrsToAdd;
-        summary[row.empId].rawOT += validOTToAdd;
-        
-        if (row.status.includes("Absent") || row.status.includes("Missing")) summary[row.empId].absents += 1;
-      });
-
-      for (let empId in summary) {
-        let s = summary[empId];
-        let totalSpent = s.total;
-        let totalTarget = reqHours;
-        let finalOvertime = s.rawOT; 
-        
-        let percentageNum = totalTarget > 0 ? ((totalSpent / totalTarget) * 100) : 0;
-        let percentageDisplay = percentageNum.toFixed(1) + "%";
-        
-        let threshold = totalTarget * 0.8;
-        let color = (totalSpent >= threshold) ? "var(--success)" : "var(--danger)";
-        let statusTxt = (totalSpent >= threshold) ? "Compliant" : "Deficit";
-        let absentColor = (s.absents > 0) ? "var(--danger)" : "inherit";
-        
-        tbody.innerHTML += `<tr>
-          <td><b>${empId}</b></td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
-          <td>${workingDays}</td>
-          <td style="color: ${absentColor}; font-weight: bold;">${s.absents}</td>
-          <td><b>${formatHours(totalTarget)}</b></td>
-          <td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
-          <td style="color: var(--warning); font-weight: bold;">${formatHours(finalOvertime)}</td>
-          <td style="color: ${color}; font-weight: bold;">${percentageDisplay}</td>
-          <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
-        </tr>`;
+    function switchView(viewId, el) {
+      document.querySelectorAll(".view-section").forEach(v => v.classList.remove("active"));
+      document.getElementById(viewId).classList.add("active");
+      
+      if(el) {
+        document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+        el.classList.add("active");
       }
     }
 
-    function buildDetailedReport(records, workingDays, reqHours) {
-      const tbody = document.getElementById("detailedTableBody");
-      const summaryBox = document.getElementById("empSummaryBox");
-      tbody.innerHTML = "";
-      let totalSpent=0, totalRawOT=0, totalAbsents=0;
-      let empName = records[0].name; let empDesig = records[0].designation; let empDept = records[0].department; 
-
-      records.forEach(row => {
-        let inTime = formatTime(row.checkIn); let outTime = formatTime(row.checkOut);
-        
-        let isHolidayOrOff = row.status.includes("Holiday") || row.status.includes("Offday") || row.dayType === "Holiday";
-        let validHrsToAdd = isHolidayOrOff ? 0 : (parseFloat(row.hours) || 0);
-        let validOTToAdd = isHolidayOrOff ? 0 : (parseFloat(row.overtime) || 0);
-
-        let statusColor = "inherit";
-        if(row.status.includes("Late Arrival") || row.status.includes("Half Day") || row.status.includes("Late Stay")) statusColor = "var(--warning)";
-        if(row.status === "Absent" || row.status.includes("Missing")) { statusColor = "var(--danger)"; totalAbsents++; }
-        if(row.status === "Offday") statusColor = "var(--text-muted)";
-        if(row.status.includes("Holiday")) statusColor = "#0284C7";
-        if(row.status === "Present" || row.status === "Target Met") statusColor = "var(--success)";
-
-        let targetHours = row.targetHours !== undefined ? parseFloat(row.targetHours) : ((row.dayType === "Normal" || row.dayType === "Working Weekend" || row.dayType === "Custom") ? 8 : 0);
-        
-        let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Modify</button>`;
-
-        tbody.innerHTML += `<tr>
-          <td>${new Date(row.date).toLocaleDateString('en-GB')}</td>
-          <td style="color:${inTime==='Missing'?'var(--danger)':'inherit'}"><b>${inTime}</b></td>
-          <td style="color:${outTime==='Missing'?'var(--danger)':'inherit'}"><b>${outTime}</b></td>
-          <td style="color: ${statusColor}; font-weight: 600;">${row.status}</td>
-          <td>${formatHours(targetHours)}</td>
-          <td><b>${formatHours(validHrsToAdd)}</b></td>
-          <td style="color: var(--warning); font-weight: bold;">${formatHours(validOTToAdd)}</td>
-          <td class="action-col no-print">${editBtnHtml}</td>
-        </tr>`;
-        
-        totalSpent += validHrsToAdd;
-        totalRawOT += validOTToAdd;
-      });
-
-      let threshold = reqHours * 0.8;
-      let color = totalSpent >= threshold ? "var(--success)" : "var(--danger)";
-      let absentColor = totalAbsents > 0 ? "var(--danger)" : "inherit";
+    // ==========================================
+    // MODULE: CALENDAR SETTINGS (Short Days)
+    // ==========================================
+    function toggleTargetHours() {
+      const type = document.getElementById("set-type").value;
+      const hoursDiv = document.getElementById("target-hours-div");
+      const hoursInput = document.getElementById("set-target-hours");
       
-      let percentageNum = reqHours > 0 ? ((totalSpent / reqHours) * 100) : 0;
-      let percentageDisplay = percentageNum.toFixed(1) + "%";
-
-      summaryBox.innerHTML = `
-        <span>Employee: <b>${empName}</b> (${empDesig})</span>
-        <span>Dept: <b>${empDept}</b></span>
-        <span>Work Days: <b>${workingDays}</b></span>
-        <span>Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span>
-        <span>Target Time: <b>${formatHours(reqHours)}</b></span>
-        <span>Time Spent: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
-        <span>Total Overtime: <b style="color: var(--warning);">${formatHours(totalRawOT)}</b></span>
-        <span>Attendance: <b style="color: ${color}; font-size: 16px;">${percentageDisplay}</b></span>
-      `;
+      if (type === "Custom") {
+        hoursDiv.style.display = "block";
+        hoursInput.setAttribute("required", "true");
+      } else {
+        hoursDiv.style.display = "none";
+        hoursInput.removeAttribute("required");
+        hoursInput.value = "";
+      }
     }
 
-    function openModal(empId, date, checkIn, checkOut) {
-      document.getElementById("editEmpId").value = empId; document.getElementById("editDate").value = date;
-      document.getElementById("editDateDisplay").innerText = "Updating log for: " + new Date(date).toLocaleDateString('en-GB');
-      document.getElementById("editCheckIn").value = (checkIn !== "Missing" && checkIn !== "-") ? checkIn.slice(0,5) : "";
-      document.getElementById("editCheckOut").value = (checkOut !== "Missing" && checkOut !== "-") ? checkOut.slice(0,5) : "";
-      document.getElementById("editModal").style.display = "block";
-    }
-
-    function closeModal() { document.getElementById("editModal").style.display = "none"; }
-    function openEmailModal() { document.getElementById("emailModal").style.display = "block"; document.getElementById("emailMessage").value = ""; }
-    function closeEmailModal() { document.getElementById("emailModal").style.display = "none"; }
-
-    function saveEdit() {
-      const inVal = document.getElementById("editCheckIn").value || "Missing"; const outVal = document.getElementById("editCheckOut").value || "Missing";
-      showToast("Processing override...", "info");
-      const payload = { action: "updateRecord", empId: document.getElementById("editEmpId").value, date: document.getElementById("editDate").value, checkIn: inVal, checkOut: outVal, role: currentUserRole, dept: currentUserDept };
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-      .then(res => res.json())
-      .then(data => { if(data.success) { showToast("Override successful. Refreshing...", "success"); setTimeout(() => { closeModal(); fetchReport(); }, 1000); } else { showToast(data.message, "error"); } });
-    }
-
-    function sendEmailReport() {
-      const filterStart = document.getElementById("filterStart").value; const filterEnd = document.getElementById("filterEnd").value; const filterEmpId = document.getElementById("filterEmpId").value.trim(); const customMessage = document.getElementById("emailMessage").value.trim();
-      if(!filterEmpId) return showToast("Critical error: No employee identified.", "error");
-      showToast("Dispatching report via internal mail server...", "info");
-      closeEmailModal();
-      const payload = { action: "emailReport", role: currentUserRole, department: currentUserDept, empId: filterEmpId, customMessage: customMessage, filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId } };
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-      .then(res => res.json())
-      .then(data => { if(data.success) showToast(data.message, "success"); else showToast(data.message, "error"); });
-    }
-
-    function saveSetting() {
-      const dateVal = document.getElementById("settingDate").value; 
-      const typeVal = document.getElementById("settingType").value; 
-      const descVal = document.getElementById("settingDesc").value;
-      const customHrsVal = document.getElementById("settingCustomHours").value;
-
-      if (!dateVal) return showToast("Validation failed: Date required.", "error");
-      if (typeVal === "Custom" && !customHrsVal) return showToast("Validation failed: Target Hours required for Short Day.", "error");
-
-      showToast("Updating calendar parameters...", "info");
-
-      // Pass the targetHours parameter to the backend if it's a Custom day
-      const payload = { 
-        action: "saveSetting", 
-        date: dateVal, 
-        type: typeVal, 
-        desc: descVal,
-        targetHours: typeVal === "Custom" ? customHrsVal : null
+    async function saveSetting(e) {
+      e.preventDefault();
+      const payload = {
+        action: "saveSetting",
+        date: document.getElementById("set-date").value,
+        type: document.getElementById("set-type").value,
+        desc: document.getElementById("set-desc").value,
+        targetHours: document.getElementById("set-target-hours").value || null // Send to backend
       };
 
-      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
-      .then(res => res.json())
-      .then(data => {
-        if(data.success) {
-          showToast("Calendar rule implemented.", "success"); 
-          // Reset fields
-          document.getElementById("settingDate").value = "";
-          document.getElementById("settingDesc").value = "";
-          document.getElementById("settingCustomHours").value = "";
-        } else {
-          showToast(data.message, "error");
-        }
-      });
+      showLoader("Saving Rule...");
+      const res = await apiCall(payload);
+      hideLoader();
+      
+      alert(res.message);
+      if(res.success) document.getElementById("settings-form").reset();
+      toggleTargetHours(); // Reset UI
     }
 
-    function processExcel() {
-      const fileInput = document.getElementById("excelFile");
-      if (!fileInput.files.length) return showToast("No file detected for parsing.", "error");
-      showToast("Loading and Parsing data...", "info");
-      
+    // ==========================================
+    // MODULE: UPLOAD DATA
+    // ==========================================
+    function processUpload() {
+      const fileInput = document.getElementById("file-upload");
+      if (!fileInput.files.length) return alert("Select a file first.");
+
+      showLoader("Reading File...");
+      const file = fileInput.files[0];
       const reader = new FileReader();
-      reader.onload = function(e) {
+
+      reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, {type: 'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, {raw: false});
+        const sheetName = workbook.SheetNames[0];
+        const jsonRecords = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {raw: true});
+        
+        if (!jsonRecords || jsonRecords.length === 0) {
+          hideLoader(); return alert("File is empty or invalid format.");
+        }
 
-        showToast("Transmitting batch data to cloud...", "info");
-        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: json }) })
-        .then(res => res.json())
-        .then(data => { if(data.success) showToast(data.message, "success"); else showToast(data.message, "error"); });
+        showLoader("Uploading " + jsonRecords.length + " records...");
+        const res = await apiCall({ action: "upload", records: jsonRecords });
+        hideLoader();
+        alert(res.message);
+        fileInput.value = "";
       };
-      reader.readAsArrayBuffer(fileInput.files[0]);
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ==========================================
+    // MODULE: REPORTING & FORMATTING
+    // ==========================================
+    function formatHours(decimalHrs) {
+      if (!decimalHrs || decimalHrs === 0) return "0h 0m";
+      const h = Math.floor(decimalHrs);
+      const m = Math.round((decimalHrs - h) * 60);
+      return `${h}h ${m}m`;
+    }
+
+    function getStatusClass(status) {
+      if (!status) return "";
+      const s = status.toLowerCase();
+      if (s.includes("absent") || s.includes("missing")) return "status-absent";
+      if (s.includes("late") || s.includes("half")) return "status-late";
+      if (s.includes("present")) return "status-present";
+      if (s.includes("holiday") || s.includes("offday")) return "status-holiday";
+      return "";
+    }
+
+    async function generateReport() {
+      const filters = {
+        startDate: document.getElementById("filter-start").value,
+        endDate: document.getElementById("filter-end").value,
+        department: document.getElementById("filter-dept").value,
+        empId: document.getElementById("filter-empId").value.trim()
+      };
+
+      if(!filters.startDate || !filters.endDate) return alert("Select date range.");
+
+      showLoader("Fetching Records...");
+      const res = await apiCall({
+        action: "getReport",
+        role: currentUser.role,
+        department: currentUser.department,
+        filters: filters
+      });
+      hideLoader();
+
+      const tbody = document.getElementById("report-body");
+      tbody.innerHTML = "";
+
+      if (!res.success || !res.data || res.data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-danger">${res.message || "No records found."}</td></tr>`;
+        return;
+      }
+
+      res.data.forEach(r => {
+        // Evaluate target hours dynamically based on dayType or custom targetHours
+        let targetText = "0h 0m";
+        if (r.targetHours !== undefined && r.targetHours !== null) {
+          targetText = formatHours(r.targetHours);
+        } else if (r.dayType === "Normal" || r.dayType === "Working Weekend") {
+          targetText = "8h 0m";
+        }
+
+        const dateObj = new Date(r.date);
+        const shortDate = `${dateObj.getDate()} ${dateObj.toLocaleString('default', { month: 'short' })}, ${dateObj.getFullYear()}`;
+        
+        let actionBtn = "";
+        if (currentUser.role === "Admin") {
+          actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="editRecord('${r.empId}', '${r.date}', '${r.checkIn}', '${r.checkOut}')">Edit</button>`;
+        }
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${r.empId}</td>
+            <td>${r.name}</td>
+            <td>${shortDate}</td>
+            <td>${r.checkIn === 'Missing' ? '-' : r.checkIn}</td>
+            <td>${r.checkOut === 'Missing' ? '-' : r.checkOut}</td>
+            <td class="${getStatusClass(r.status)}">${r.status}</td>
+            <td>${targetText}</td>
+            <td>${formatHours(r.hours)}</td>
+            <td style="color:#d35400;">${formatHours(r.overtime)}</td>
+            <td class="admin-filter" style="display: ${currentUser.role === 'Admin' ? 'table-cell' : 'none'};">${actionBtn}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // ==========================================
+    // MODULE: RECORD OVERRIDES
+    // ==========================================
+    async function editRecord(empId, dateStr, currentIn, currentOut) {
+      const newIn = prompt("Enter Check-In time (HH:MM or Excel format) or 'Missing':", currentIn);
+      if (newIn === null) return;
+      const newOut = prompt("Enter Check-Out time (HH:MM or Excel format) or 'Missing':", currentOut);
+      if (newOut === null) return;
+
+      if (newIn === currentIn && newOut === currentOut) return; // No change
+
+      showLoader("Updating Database...");
+      const res = await apiCall({
+        action: "updateRecord",
+        empId: empId,
+        date: dateStr,
+        checkIn: newIn,
+        checkOut: newOut,
+        role: currentUser.role,
+        dept: currentUser.department
+      });
+      hideLoader();
+      
+      alert(res.message);
+      if(res.success) generateReport(); // Refresh view
     }
   </script>
 </body>
