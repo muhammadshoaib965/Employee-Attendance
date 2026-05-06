@@ -8,19 +8,10 @@
   
   <style>
     :root {
-      --primary-blue: #0A3663; 
-      --secondary-blue: #145A9E;
-      --accent-gold: #F4A81D; 
-      --bg-color: #F4F7F6;
-      --card-bg: #FFFFFF;
-      --text-main: #2C3E50;
-      --text-muted: #6C7A89;
-      --border-color: #E2E8F0;
-      --success: #10B981;
-      --danger: #EF4444;
-      --warning: #F59E0B;
+      --primary-blue: #0A3663; --secondary-blue: #145A9E; --accent-gold: #F4A81D; 
+      --bg-color: #F4F7F6; --card-bg: #FFFFFF; --text-main: #2C3E50; --text-muted: #6C7A89;
+      --border-color: #E2E8F0; --success: #10B981; --danger: #EF4444; --warning: #F59E0B;
     }
-
     body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); margin: 0; padding: 30px 20px; color: var(--text-main); }
     h2, h3 { color: var(--primary-blue); font-weight: 600; }
     .logo-container { text-align: center; margin-bottom: 20px; }
@@ -40,9 +31,9 @@
     button:hover { background-color: var(--secondary-blue); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(20, 90, 158, 0.2); }
     button:active { transform: translateY(0); }
     .btn-secondary { background-color: #64748B; }
-    .btn-secondary:hover { background-color: #475569; box-shadow: 0 4px 10px rgba(100, 116, 139, 0.2); }
+    .btn-secondary:hover { background-color: #475569; }
     .btn-danger { background-color: var(--danger); }
-    .btn-danger:hover { background-color: #DC2626; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+    .btn-danger:hover { background-color: #DC2626; }
     .btn-edit { background-color: var(--accent-gold); color: #000; padding: 6px 12px; font-size: 12px; font-weight: 600; }
     .btn-edit:hover { background-color: #E09612; }
     .btn-email { background-color: #0284C7; float: right; }
@@ -72,7 +63,6 @@
     .print-header { display: none; text-align: center; margin-bottom: 20px; color: var(--text-main); font-size: 22px; font-weight: bold; }
 
     .developer-credit { text-align: center; margin-top: 40px; padding-bottom: 20px; font-size: 12px; color: var(--text-muted); letter-spacing: 0.5px; }
-    
     .login-links { text-align: center; margin-top: 20px; font-size: 13px; font-weight: 500; }
     .login-links a { color: var(--secondary-blue); text-decoration: none; margin: 0 10px; transition: color 0.2s; }
     .login-links a:hover { color: var(--primary-blue); text-decoration: underline; }
@@ -327,43 +317,32 @@
   </div>
 
   <script>
-    // 🚨 PASTE YOUR LATEST WEB APP URL HERE
+    // 🚨 PASTE YOUR BRAND NEW WEB APP URL HERE (From Account B)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOuFJfbtY0yN8YCV6KqMRWm_7s-kLhIQab6-uxOrHrlQoa2s0-M7haS-OnSK_6aeKH/exec";
 
     let currentUserRole = ""; let currentUserDept = ""; let currentUsername = "";
     let toastTimeout;
+    let globalPercentage = "0%"; // Added for passing to the email template
 
-    // Toggle custom hours input visibility
     function toggleCustomHours() {
       const type = document.getElementById("settingType").value;
       const customGroup = document.getElementById("customHoursGroup");
-      if (type === "Custom") {
-        customGroup.style.display = "block";
-      } else {
-        customGroup.style.display = "none";
-        document.getElementById("settingCustomHours").value = "";
-      }
+      if (type === "Custom") customGroup.style.display = "block";
+      else { customGroup.style.display = "none"; document.getElementById("settingCustomHours").value = ""; }
     }
 
     function showToast(msg, type = "success") {
       const toast = document.getElementById("toast");
       if (toastTimeout) clearTimeout(toastTimeout);
-      
-      if(type === "error") {
-        toast.style.backgroundColor = "#EF4444"; toast.innerHTML = `<span>❌</span> <span>${msg}</span>`;
-      } else if(type === "info") {
-        toast.style.backgroundColor = "#0284C7"; toast.innerHTML = `<div class="spinner"></div> <span>${msg}</span>`;
-      } else {
-        toast.style.backgroundColor = "#10B981"; toast.innerHTML = `<span>✅</span> <span>${msg}</span>`;
-      }
-      
+      if(type === "error") { toast.style.backgroundColor = "#EF4444"; toast.innerHTML = `<span>❌</span> <span>${msg}</span>`; }
+      else if(type === "info") { toast.style.backgroundColor = "#0284C7"; toast.innerHTML = `<div class="spinner"></div> <span>${msg}</span>`; }
+      else { toast.style.backgroundColor = "#10B981"; toast.innerHTML = `<span>✅</span> <span>${msg}</span>`; }
       toast.className = "toast show";
       if (type !== "info") toastTimeout = setTimeout(() => { toast.className = "toast"; }, 3500);
     }
 
     function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
+      const user = document.getElementById("username").value; const pass = document.getElementById("password").value;
       if(!user || !pass) return showToast("Fill in all fields.", "error");
       
       showToast("Authenticating connection...", "info");
@@ -395,14 +374,10 @@
     function logout() {
       currentUsername = ""; currentUserRole = ""; currentUserDept = "";
       document.getElementById("username").value = ""; document.getElementById("password").value = "";
-      document.getElementById("dashboard").style.display = "none";
-      document.getElementById("loginScreen").style.display = "block";
-      document.getElementById("adminControls").style.display = "none";
-      document.getElementById("summaryTable").style.display = "none";
-      document.getElementById("detailedTableContainer").style.display = "none";
-      document.querySelector('.print-btn').style.display = "none";
-      document.getElementById("btnEmail").style.display = "none";
-      document.getElementById("printHeader").style.display = "none";
+      document.getElementById("dashboard").style.display = "none"; document.getElementById("loginScreen").style.display = "block";
+      document.getElementById("adminControls").style.display = "none"; document.getElementById("summaryTable").style.display = "none";
+      document.getElementById("detailedTableContainer").style.display = "none"; document.querySelector('.print-btn').style.display = "none";
+      document.getElementById("btnEmail").style.display = "none"; document.getElementById("printHeader").style.display = "none";
       showToast("Logged out successfully.", "success");
     }
 
@@ -420,7 +395,6 @@
       const user = document.getElementById("cpUsername").value.trim(); const oldPass = document.getElementById("oldPassword").value; const newPass = document.getElementById("newPassword").value; const confPass = document.getElementById("confirmPassword").value;
       if (!user || !oldPass || !newPass || !confPass) return showToast("Please fill all fields.", "error");
       if (newPass !== confPass) return showToast("New passwords do not match.", "error");
-
       showToast("Updating security credentials...", "info");
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "changePassword", username: user, oldPassword: oldPass, newPassword: newPass }) })
       .then(res => res.json())
@@ -438,7 +412,7 @@
 
     function formatTime(timeStr) {
       if (!timeStr || timeStr === "Missing" || timeStr === "-") return timeStr;
-      if (timeStr.toString().includes("1899")) { return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false}); }
+      if (timeStr.toString().includes("1899")) return new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
       return timeStr;
     }
 
@@ -452,8 +426,7 @@
     function fetchReport() {
       const summaryTable = document.getElementById("summaryTable");
       const detailedTableContainer = document.getElementById("detailedTableContainer");
-      const filterStart = document.getElementById("filterStart").value;
-      const filterEnd = document.getElementById("filterEnd").value;
+      const filterStart = document.getElementById("filterStart").value; const filterEnd = document.getElementById("filterEnd").value;
       const filterEmpId = document.getElementById("filterEmpId").value.trim();
       
       if(!filterStart || !filterEnd) return showToast("Please define a reporting period.", "error");
@@ -468,50 +441,37 @@
       .then(res => res.json())
       .then(data => {
         if(data.success && data.data.length > 0) {
-          document.querySelector('.print-btn').style.display = "inline-block";
-          document.getElementById("printHeader").style.display = "block";
+          document.querySelector('.print-btn').style.display = "inline-block"; document.getElementById("printHeader").style.display = "block";
           document.getElementById("printHeader").innerHTML = `FAST-NUCES Multan Campus<br>Employee Attendance Sheet<br><span style="font-size:16px; font-weight:normal;">(${filterStart} to ${filterEnd})</span>`;
 
-          if (filterEmpId === "") {
-            buildSummaryReport(data.data, data.workingDays, data.requiredHours);
-            summaryTable.style.display = "table";
-            showToast("Summary generated successfully.", "success");
-          } else {
-            buildDetailedReport(data.data, data.workingDays, data.requiredHours);
-            detailedTableContainer.style.display = "block";
-            document.getElementById("btnEmail").style.display = "inline-block";
-            showToast("Detailed records loaded.", "success");
-          }
+          if (filterEmpId === "") { buildSummaryReport(data.data, data.workingDays, data.requiredHours); summaryTable.style.display = "table"; showToast("Summary generated successfully.", "success"); } 
+          else { buildDetailedReport(data.data, data.workingDays, data.requiredHours); detailedTableContainer.style.display = "block"; document.getElementById("btnEmail").style.display = "inline-block"; showToast("Detailed records loaded.", "success"); }
         } else { showToast(data.message || "No records match the criteria.", "error"); }
       });
     }
 
     function buildSummaryReport(records, workingDays, reqHours) {
-      const tbody = document.getElementById("summaryTableBody");
-      tbody.innerHTML = "";
+      const tbody = document.getElementById("summaryTableBody"); tbody.innerHTML = "";
       let summary = {};
 
       records.forEach(row => {
-        // Core Logic Update: Ignore ANY hours calculated if the day is an Offday or Holiday
         let isHolidayOrOff = row.status.includes("Holiday") || row.status.includes("Offday") || row.dayType === "Holiday";
         let validHrsToAdd = isHolidayOrOff ? 0 : (parseFloat(row.hours) || 0);
         let validOTToAdd = isHolidayOrOff ? 0 : (parseFloat(row.overtime) || 0);
 
-        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0, absents:0 };
+        if (!summary[row.empId]) summary[row.empId] = { name: row.name, desig: row.designation, dept: row.department, total:0, rawOT:0, absents:0, myTarget:0 };
         
         summary[row.empId].total += validHrsToAdd;
         summary[row.empId].rawOT += validOTToAdd;
+        summary[row.empId].myTarget += (parseFloat(row.targetHours) || 0);
         
         if (row.status.includes("Absent") || row.status.includes("Missing")) summary[row.empId].absents += 1;
       });
 
       for (let empId in summary) {
         let s = summary[empId];
-        let totalSpent = s.total;
-        let totalTarget = reqHours;
-        let finalOvertime = s.rawOT; 
+        let totalSpent = s.total; let totalTarget = s.myTarget; let finalOvertime = s.rawOT; 
         
-        // Calculate Percentage
         let percentageNum = totalTarget > 0 ? ((totalSpent / totalTarget) * 100) : 0;
         let percentageDisplay = percentageNum.toFixed(1) + "%";
         
@@ -522,10 +482,8 @@
         
         tbody.innerHTML += `<tr>
           <td><b>${empId}</b></td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.desig}</td><td>${s.dept}</td>
-          <td>${workingDays}</td>
-          <td style="color: ${absentColor}; font-weight: bold;">${s.absents}</td>
-          <td><b>${formatHours(totalTarget)}</b></td>
-          <td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
+          <td>${workingDays}</td><td style="color: ${absentColor}; font-weight: bold;">${s.absents}</td>
+          <td><b>${formatHours(totalTarget)}</b></td><td style="color: ${color}; font-weight: bold;">${formatHours(totalSpent)}</td>
           <td style="color: var(--warning); font-weight: bold;">${formatHours(finalOvertime)}</td>
           <td style="color: ${color}; font-weight: bold;">${percentageDisplay}</td>
           <td style="color: ${color}; font-weight: bold;">${statusTxt}</td>
@@ -534,16 +492,13 @@
     }
 
     function buildDetailedReport(records, workingDays, reqHours) {
-      const tbody = document.getElementById("detailedTableBody");
-      const summaryBox = document.getElementById("empSummaryBox");
+      const tbody = document.getElementById("detailedTableBody"); const summaryBox = document.getElementById("empSummaryBox");
       tbody.innerHTML = "";
       let totalSpent=0, totalRawOT=0, totalAbsents=0;
       let empName = records[0].name; let empDesig = records[0].designation; let empDept = records[0].department; 
 
       records.forEach(row => {
         let inTime = formatTime(row.checkIn); let outTime = formatTime(row.checkOut);
-        
-        // Exclude hours if holiday/offday
         let isHolidayOrOff = row.status.includes("Holiday") || row.status.includes("Offday") || row.dayType === "Holiday";
         let validHrsToAdd = isHolidayOrOff ? 0 : (parseFloat(row.hours) || 0);
         let validOTToAdd = isHolidayOrOff ? 0 : (parseFloat(row.overtime) || 0);
@@ -555,9 +510,7 @@
         if(row.status.includes("Holiday")) statusColor = "#0284C7";
         if(row.status === "Present" || row.status === "Target Met") statusColor = "var(--success)";
 
-        // Support for backend passing custom targetHours (otherwise fallback to 8 for normal days)
-        let targetHours = row.targetHours !== undefined ? parseFloat(row.targetHours) : ((row.dayType === "Normal" || row.dayType === "Working Weekend" || row.dayType === "Custom") ? 8 : 0);
-        
+        let targetHours = parseFloat(row.targetHours) || 0;
         let editBtnHtml = `<button class="btn-edit" onclick="openModal('${row.empId}', '${row.date}', '${inTime}', '${outTime}')">Modify</button>`;
 
         tbody.innerHTML += `<tr>
@@ -570,9 +523,7 @@
           <td style="color: var(--warning); font-weight: bold;">${formatHours(validOTToAdd)}</td>
           <td class="action-col no-print">${editBtnHtml}</td>
         </tr>`;
-        
-        totalSpent += validHrsToAdd;
-        totalRawOT += validOTToAdd;
+        totalSpent += validHrsToAdd; totalRawOT += validOTToAdd;
       });
 
       let threshold = reqHours * 0.8;
@@ -581,15 +532,13 @@
       
       let percentageNum = reqHours > 0 ? ((totalSpent / reqHours) * 100) : 0;
       let percentageDisplay = percentageNum.toFixed(1) + "%";
+      
+      globalPercentage = percentageDisplay; // Capture for Email Sending
 
       summaryBox.innerHTML = `
-        <span>Employee: <b>${empName}</b> (${empDesig})</span>
-        <span>Dept: <b>${empDept}</b></span>
-        <span>Work Days: <b>${workingDays}</b></span>
-        <span>Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span>
-        <span>Target Time: <b>${formatHours(reqHours)}</b></span>
-        <span>Time Spent: <b style="color: ${color};">${formatHours(totalSpent)}</b></span>
-        <span>Total Overtime: <b style="color: var(--warning);">${formatHours(totalRawOT)}</b></span>
+        <span>Employee: <b>${empName}</b> (${empDesig})</span><span>Dept: <b>${empDept}</b></span><span>Work Days: <b>${workingDays}</b></span>
+        <span>Absents: <b style="color: ${absentColor};">${totalAbsents}</b></span><span>Target Time: <b>${formatHours(reqHours)}</b></span>
+        <span>Time Spent: <b style="color: ${color};">${formatHours(totalSpent)}</b></span><span>Total Overtime: <b style="color: var(--warning);">${formatHours(totalRawOT)}</b></span>
         <span>Attendance: <b style="color: ${color}; font-size: 16px;">${percentageDisplay}</b></span>
       `;
     }
@@ -616,33 +565,37 @@
     }
 
     function sendEmailReport() {
-      const filterStart = document.getElementById("filterStart").value; const filterEnd = document.getElementById("filterEnd").value; const filterEmpId = document.getElementById("filterEmpId").value.trim(); const customMessage = document.getElementById("emailMessage").value.trim();
+      const filterStart = document.getElementById("filterStart").value; const filterEnd = document.getElementById("filterEnd").value; 
+      const filterEmpId = document.getElementById("filterEmpId").value.trim(); const customMessage = document.getElementById("emailMessage").value.trim();
+      
       if(!filterEmpId) return showToast("Critical error: No employee identified.", "error");
+      
       showToast("Dispatching report via internal mail server...", "info");
       closeEmailModal();
-      const payload = { action: "emailReport", role: currentUserRole, department: currentUserDept, empId: filterEmpId, customMessage: customMessage, filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId } };
+      
+      const payload = { 
+        action: "emailReport", 
+        role: currentUserRole, department: currentUserDept, empId: filterEmpId, customMessage: customMessage,
+        attendancePercentage: globalPercentage,
+        filters: { startDate: filterStart, endDate: filterEnd, department: document.getElementById("filterDept").value, empId: filterEmpId } 
+      };
+      
       fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
       .then(res => res.json())
       .then(data => { if(data.success) showToast(data.message, "success"); else showToast(data.message, "error"); });
     }
 
     function saveSetting() {
-      const dateVal = document.getElementById("settingDate").value; 
-      const typeVal = document.getElementById("settingType").value; 
-      const descVal = document.getElementById("settingDesc").value;
-      const customHrsVal = document.getElementById("settingCustomHours").value;
+      const dateVal = document.getElementById("settingDate").value; const typeVal = document.getElementById("settingType").value; 
+      const descVal = document.getElementById("settingDesc").value; const customHrsVal = document.getElementById("settingCustomHours").value;
 
       if (!dateVal) return showToast("Validation failed: Date required.", "error");
       if (typeVal === "Custom" && !customHrsVal) return showToast("Validation failed: Target Hours required for Short Day.", "error");
 
       showToast("Updating calendar parameters...", "info");
 
-      // Pass the targetHours parameter to the backend if it's a Custom day
       const payload = { 
-        action: "saveSetting", 
-        date: dateVal, 
-        type: typeVal, 
-        desc: descVal,
+        action: "saveSetting", date: dateVal, type: typeVal, desc: descVal,
         targetHours: typeVal === "Custom" ? customHrsVal : null
       };
 
@@ -651,13 +604,8 @@
       .then(data => {
         if(data.success) {
           showToast("Calendar rule implemented.", "success"); 
-          // Reset fields
-          document.getElementById("settingDate").value = "";
-          document.getElementById("settingDesc").value = "";
-          document.getElementById("settingCustomHours").value = "";
-        } else {
-          showToast(data.message, "error");
-        }
+          document.getElementById("settingDate").value = ""; document.getElementById("settingDesc").value = ""; document.getElementById("settingCustomHours").value = "";
+        } else { showToast(data.message, "error"); }
       });
     }
 
@@ -668,10 +616,8 @@
       
       const reader = new FileReader();
       reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, {raw: false});
+        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]]; const json = XLSX.utils.sheet_to_json(sheet, {raw: false});
 
         showToast("Transmitting batch data to cloud...", "info");
         fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "upload", records: json }) })
